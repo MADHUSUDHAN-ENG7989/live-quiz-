@@ -491,7 +491,7 @@ async function validate(){
   const token = localStorage.getItem("quizToken");
   if(!token){ 
       alert("Please login"); 
-      location.href="login.html"; 
+      location.href="index.html"; 
       return; 
   }
 
@@ -503,7 +503,7 @@ async function validate(){
     if(!res.ok){ 
         alert("Session expired"); 
         localStorage.clear(); 
-        location.href="login.html"; 
+        location.href="index.html"; 
         return; 
     }
 
@@ -511,7 +511,7 @@ async function validate(){
 
     if(data.user.role !== "admin"){ 
         alert("Access denied"); 
-        location.href="login.html"; 
+        location.href="index.html"; 
         return; 
     }
 
@@ -525,7 +525,7 @@ async function validate(){
   } catch(e){
     console.error(e);
     alert("Network error");
-    location.href="login.html";
+    location.href="index.html";
   }
 }
 
@@ -534,7 +534,7 @@ validate();
 function logout(){ 
     if(confirm("Are you sure you want to logout?")) {
         localStorage.clear(); 
-        location.href="login.html"; 
+        location.href="index.html"; 
     }
 }
 </script>

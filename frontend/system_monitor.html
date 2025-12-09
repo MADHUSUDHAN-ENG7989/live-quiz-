@@ -241,7 +241,7 @@
         const token = localStorage.getItem("quizToken");
         if (!token) {
             alert("Please login as Admin to view this page.");
-            window.location.href = "login.html";
+            window.location.href = "index.html";
             return;
         }
 
@@ -252,7 +252,7 @@
             
             if (response.status === 401 || response.status === 403) {
                 alert("Access Denied: Admins only.");
-                window.location.href = "login.html";
+                window.location.href = "index.html";
                 return;
             }
 

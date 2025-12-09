@@ -597,7 +597,7 @@ async function validate() {
   const token = localStorage.getItem("quizToken");
   if (!token) { 
     alert("Please login first"); 
-    location.href = "login.html"; 
+    location.href = "index.html"; 
     return; 
   }
 
@@ -609,7 +609,7 @@ async function validate() {
     if (!res.ok) { 
         alert("Session expired. Please login again."); 
         localStorage.clear(); 
-        location.href = "login.html"; 
+        location.href = "index.html"; 
         return; 
     }
 
@@ -617,7 +617,7 @@ async function validate() {
 
     if (data.user.role !== "teacher") { 
         alert("Access denied. Teachers only."); 
-        location.href = "login.html"; 
+        location.href = "index.html"; 
         return; 
     }
 
@@ -636,7 +636,7 @@ async function validate() {
   } catch (err) {
     console.error(err);
     alert("Network error. Please check your connection.");
-    location.href = "login.html";
+    location.href = "index.html";
   }
 }
 
@@ -736,7 +736,7 @@ function logout() {
             socket.disconnect();
         }
         
-        location.href = "login.html";
+        location.href = "index.html";
     }
 }
 

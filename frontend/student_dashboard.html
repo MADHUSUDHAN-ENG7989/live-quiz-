@@ -333,7 +333,7 @@
         const token = localStorage.getItem("quizToken");
         if (!token) {
             alert("Please login first");
-            location.href = "login.html";
+            location.href = "index.html";
             return;
         }
 
@@ -345,7 +345,7 @@
             if (!res.ok) {
                 alert("Session expired. Please login again.");
                 localStorage.clear();
-                location.href = "login.html";
+                location.href = "index.html";
                 return;
             }
 
@@ -353,7 +353,7 @@
             
             if (data.user.role !== 'student') {
                 alert("Access denied.");
-                location.href = "login.html";
+                location.href = "index.html";
                 return;
             }
 
@@ -379,7 +379,7 @@
         } catch (err) {
             console.error(err);
             alert(`Network error: ${err.message}. Please check your connection/server.`);
-            location.href = "login.html";
+            location.href = "index.html";
         }
     }
 
@@ -452,7 +452,7 @@
     function logout() {
         if (confirm('Are you sure you want to logout?')) {
             localStorage.clear();
-            location.href = "login.html";
+            location.href = "index.html";
         }
     }
 

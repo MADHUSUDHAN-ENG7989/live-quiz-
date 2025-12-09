@@ -10,3 +10,7 @@ build/
 coverage/
 .vscode/
 .idea/
+backend/.env
+frontend/.env
+backend/.env
+frontend/.env

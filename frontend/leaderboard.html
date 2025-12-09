@@ -92,7 +92,7 @@ const API_URL = CONFIG.API_BASE_URL;
 
 async function fetchLeaderboard() {
     const token = localStorage.getItem("quizToken");
-    if (!token) { location.href = "login.html"; return; }
+    if (!token) { location.href = "index.html"; return; }
 
     try {
         const res = await fetch(`${API_URL}/api/leaderboard`, {
