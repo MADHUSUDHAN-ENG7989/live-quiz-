@@ -238,7 +238,7 @@ app.get('/api/metrics', async (req, res) => {
 
 // Redirect root to login
 app.get("/", (req, res) => {
-    res.redirect("/login.html");
+    res.redirect("/index.html");
 });
 
 // Update your /register endpoint to track metrics:
