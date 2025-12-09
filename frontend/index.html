@@ -229,6 +229,22 @@
                 font-size: 36px;
             }
         }
+        
+        /* Loader Animation */
+        .spinner {
+            width: 24px;
+            height: 24px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+            display: inline-block;
+            vertical-align: middle;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body>
@@ -247,6 +263,8 @@
             <label for="password">Password</label>
             <input type="password" id="password" placeholder="Enter your password">
         </div>
+
+        <p id="loginMessage" style="color: #EF4444; text-align: center; margin-bottom: 15px; font-size: 14px; min-height: 20px;"></p>
 
 
 
@@ -267,11 +285,21 @@
         function login() {
             const userid = document.getElementById("username").value.trim();
             const pswd = document.getElementById("password").value.trim();
+            const msgEl = document.getElementById("loginMessage");
+
+            // Reset message
+            msgEl.textContent = "";
 
             if (userid === "" || pswd === "") {
-                alert("Please fill all fields");
+                msgEl.textContent = "Please fill all fields";
                 return;
             }
+
+            // Show loading state
+            const btn = document.querySelector("button");
+            const originalBtnText = "Login"; // Hardcoded as original text
+            btn.innerHTML = '<div class="spinner"></div>';
+            btn.disabled = true;
 
             fetch(`${CONFIG.API_BASE_URL}/check-user`, {
                 method: "POST",
@@ -280,9 +308,8 @@
             })
             .then(res => res.json())
             .then(data => {
-                alert(data.message);
-
                 if (data.exists) {
+                    // Success - no need to show message, just redirect
                     localStorage.setItem("quizToken", data.token);
                     localStorage.setItem("quizRole", data.role);
                     localStorage.setItem("quizUser", data.userid);
@@ -297,9 +324,19 @@
                     if(data.role === "admin"){
                         window.location.href = "admin_dashboard.html";
                     }
+                } else {
+                    // Failure - show message
+                    msgEl.textContent = data.message;
+                    btn.innerHTML = originalBtnText;
+                    btn.disabled = false;
                 }
             })
-            .catch(err => console.log(err));
+            .catch(err => {
+                console.log(err);
+                msgEl.textContent = "Connection failed. Please try again.";
+                btn.innerHTML = originalBtnText;
+                btn.disabled = false;
+            });
         }
 
         // Allow Enter key to submit
