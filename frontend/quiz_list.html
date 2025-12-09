@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Available Quizzes</title>
+    <script src="config.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: "Inter", sans-serif; }
+        body { background: #0F172A; color: #F1F5F9; padding: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 40px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #334155;
+        }
+        .header h1 { font-size: 28px; font-weight: 700; }
+        .back-btn {
+            padding: 10px 20px;
+            background: #334155;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 500;
+            transition: background 0.2s;
+        }
+        .back-btn:hover { background: #475569; }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #94A3B8;
+            margin-bottom: 16px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .quiz-grid {
+            display: grid;
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .quiz-card {
+            background: #1E293B;
+            border-radius: 16px;
+            padding: 24px;
+            border: 1px solid #334155;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: transform 0.2s;
+        }
+        
+        .quiz-card:hover {
+            transform: translateY(-2px);
+            border-color: #6366F1;
+        }
+
+        .quiz-info h3 {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .quiz-meta {
+            color: #94A3B8;
+            font-size: 14px;
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .status-active { background: rgba(16, 185, 129, 0.1); color: #10B981; }
+        .status-ended { background: rgba(239, 68, 68, 0.1); color: #EF4444; }
+        .status-scheduled { background: rgba(245, 158, 11, 0.1); color: #F59E0B; }
+
+        .join-btn {
+            padding: 12px 24px;
+            background: #6366F1;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+            text-decoration: none;
+            white-space: nowrap;
+        }
+        .join-btn:hover { background: #4F46E5; }
+        .join-btn.disabled {
+            background: #334155;
+            color: #94A3B8;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
+        .no-quizzes {
+            text-align: center;
+            padding: 40px;
+            color: #94A3B8;
+            background: rgba(30, 41, 59, 0.5);
+            border-radius: 12px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #94A3B8;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <h1>📚 Available Quizzes</h1>
+        <a href="student_dashboard.html" class="back-btn">Back to Dashboard</a>
+    </div>
+
+    <div class="section-title">Scheduled Quizzes</div>
+    <div id="scheduledQuizzes" class="quiz-grid">
+        <div class="loading">Loading quizzes...</div>
+    </div>
+
+    <div class="section-title">Live Quizzes</div>
+    <div id="liveQuizzes" class="quiz-grid">
+        <div class="loading">Loading quizzes...</div>
+    </div>
+
+    <div class="section-title">Ended Quizzes</div>
+    <div id="endedQuizzes" class="quiz-grid">
+        <div class="loading">Loading quizzes...</div>
+    </div>
+</div>
+
+<script>
+    const API_URL = CONFIG.API_BASE_URL;
+
+    async function fetchQuizzes() {
+        const userId = localStorage.getItem("quizUser");
+        if (!userId) {
+            alert("Please login first");
+            window.location.href = "login.html";
+            return;
+        }
+
+        try {
+            const response = await fetch(`${API_URL}/api/quizzes/for-student/${userId}`);
+            const data = await response.json();
+
+            if (!data || !Array.isArray(data.availableQuizzes)) {
+                console.error('Invalid response:', data);
+                displayNoQuizzes('liveQuizzes');
+                displayNoQuizzes('endedQuizzes');
+                return;
+            }
+
+            // Filter available quizzes into Live and Scheduled
+            const liveQuizzes = data.availableQuizzes.filter(q => q.status === 'active');
+            const scheduledQuizzes = data.availableQuizzes.filter(q => q.status === 'scheduled');
+
+            // Display quizzes
+            displayQuizList('liveQuizzes', liveQuizzes, true);
+            displayQuizList('scheduledQuizzes', scheduledQuizzes, true);
+            displayQuizList('endedQuizzes', data.completedQuizzes, false);
+
+        } catch (error) {
+            console.error('Error fetching quizzes:', error);
+            document.getElementById('liveQuizzes').innerHTML = 
+                '<div class="no-quizzes">Error loading quizzes. Please refresh the page.</div>';
+            document.getElementById('endedQuizzes').innerHTML = 
+                '<div class="no-quizzes">Error loading quizzes. Please refresh the page.</div>';
+        }
+    }
+
+    function displayQuizList(containerId, quizzes, isAvailable) {
+        const container = document.getElementById(containerId);
+
+        if (quizzes.length === 0) {
+            displayNoQuizzes(containerId);
+            return;
+        }
+
+        container.innerHTML = quizzes.map(quiz => createQuizCard(quiz, isAvailable)).join('');
+    }
+
+    function createQuizCard(quiz, isAvailable) {
+        const questionCount = quiz.questions ? quiz.questions.length : 0;
+        const createdDate = quiz.createdAt ? new Date(quiz.createdAt).toLocaleDateString() : 'Unknown';
+        const timerMode = quiz.timerMode === 'whole_quiz' ? 'Whole Quiz Timer' : 'Per Question Timer';
+        
+        // Determine status label and class
+        let statusLabel = '● Live';
+        let statusClass = 'status-active';
+        let btnText = 'Join Quiz';
+        let btnClass = '';
+        
+        if (!isAvailable) {
+            statusLabel = quiz.status === 'ended' ? '● Ended' : '● Completed';
+            statusClass = 'status-ended';
+            btnText = quiz.status === 'ended' ? 'Ended' : 'Completed';
+            btnClass = 'disabled';
+        } else if (quiz.status === 'scheduled') {
+            statusLabel = `● Scheduled`;
+            statusClass = 'status-scheduled';
+            btnText = 'Scheduled';
+            btnClass = 'disabled';
+        }
+
+        const scheduledTime = quiz.scheduledStartTime 
+            ? new Date(quiz.scheduledStartTime).toLocaleString() 
+            : '';
+        
+        const endTime = quiz.scheduledEndTime
+            ? new Date(quiz.scheduledEndTime).toLocaleString()
+            : '';
+
+        return `
+            <div class="quiz-card">
+                <div class="quiz-info">
+                    <h3>${quiz.title || 'Untitled Quiz'}</h3>
+                    <div class="quiz-meta">
+                        <span>📝 ${questionCount} Question${questionCount !== 1 ? 's' : ''}</span>
+                        <span>⏱️ ${timerMode}</span>
+                        <span>📅 ${createdDate}</span>
+                        <span class="status-badge ${statusClass}">
+                            ${statusLabel}
+                        </span>
+                    </div>
+                    ${scheduledTime ? `<p class="scheduled-time" style="color: #94A3B8; margin-top: 8px; font-size: 14px;">📅 Starts: ${scheduledTime}</p>` : ''}
+                    ${endTime ? `<p class="scheduled-time" style="color: #94A3B8; margin-top: 4px; font-size: 14px;">🛑 Ends: ${endTime}</p>` : ''}
+                </div>
+                <a href="attend_quiz.html?quizId=${quiz._id}" class="join-btn ${btnClass}">
+                    ${btnText}
+                </a>
+            </div>
+        `;
+    }
+
+    function displayNoQuizzes(containerId) {
+        const container = document.getElementById(containerId);
+        const message = containerId === 'liveQuizzes' 
+            ? 'No live quizzes available right now. Check back later!' 
+            : containerId === 'scheduledQuizzes'
+            ? 'No upcoming scheduled quizzes.'
+            : 'No ended or completed quizzes yet.';
+        container.innerHTML = `<div class="no-quizzes">${message}</div>`;
+    }
+
+    // Fetch quizzes on page load
+    fetchQuizzes();
+
+    // Refresh every 10 seconds to get new quizzes
+    setInterval(fetchQuizzes, 10000);
+</script>
+
+</body>
+</html>

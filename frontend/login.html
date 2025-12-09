@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LiveQuiz+ Login</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: "Inter", sans-serif;
+            background: #0F172A;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            position: relative;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle at 20% 50%, rgba(99, 102, 241, 0.12) 0%, transparent 50%),
+                        radial-gradient(circle at 80% 80%, rgba(6, 182, 212, 0.12) 0%, transparent 50%);
+            pointer-events: none;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 420px;
+            padding: 40px;
+            background: rgba(30, 41, 59, 0.8);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5),
+                        0 0 0 1px rgba(255, 255, 255, 0.05);
+            animation: fadeInUp 0.6s ease-out;
+            position: relative;
+            z-index: 1;
+        }
+
+        @keyframes fadeInUp {
+            from { 
+                opacity: 0; 
+                transform: translateY(20px); 
+            }
+            to { 
+                opacity: 1; 
+                transform: translateY(0); 
+            }
+        }
+
+        .logo {
+            width: 88px;
+            height: 88px;
+            background: linear-gradient(135deg, #6366F1, #06B6D4);
+            border-radius: 22px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            font-size: 40px;
+            box-shadow: 0 10px 30px rgba(99, 102, 241, 0.3);
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        h2 {
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 30px;
+            color: #F1F5F9;
+            font-weight: 700;
+        }
+
+        .subtitle {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 16px;
+            color: #94A3B8;
+            font-weight: 400;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 14px;
+            color: #CBD5E1;
+            font-weight: 500;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 14px 16px;
+            border-radius: 12px;
+            border: 1px solid #334155;
+            background: rgba(15, 23, 42, 0.5);
+            color: #F1F5F9;
+            outline: none;
+            font-size: 16px;
+            font-family: "Inter", sans-serif;
+            transition: all 0.3s ease;
+        }
+
+        input:focus, select:focus {
+            border-color: #6366F1;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+            background: rgba(15, 23, 42, 0.7);
+        }
+
+        input::placeholder {
+            color: #64748B;
+        }
+
+        select {
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2394A3B8' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 16px center;
+            padding-right: 40px;
+        }
+
+        select option {
+            background: #1E293B;
+            color: #F1F5F9;
+        }
+
+        button {
+            width: 100%;
+            padding: 16px;
+            margin-top: 10px;
+            background: linear-gradient(135deg, #6366F1, #8B5CF6);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            font-family: "Inter", sans-serif;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 30px rgba(99, 102, 241, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        button:hover::before {
+            left: 100%;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 40px rgba(99, 102, 241, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .footer {
+            margin-top: 25px;
+            text-align: center;
+            font-size: 14px;
+            color: #94A3B8;
+        }
+
+        .footer a {
+            color: #6366F1;
+            text-decoration: none;
+            font-weight: 600;
+            transition: color 0.3s ease;
+        }
+
+        .footer a:hover {
+            color: #8B5CF6;
+        }
+
+        .tagline {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 14px;
+            color: #64748B;
+            padding-top: 20px;
+            border-top: 1px solid #334155;
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 35px 28px;
+            }
+
+            h2 {
+                font-size: 26px;
+            }
+
+            .logo {
+                width: 72px;
+                height: 72px;
+                font-size: 36px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="logo">🎯</div>
+        <h2>Welcome Back</h2>
+        <p class="subtitle">Login to LiveQuiz+</p>
+
+        <div class="form-group">
+            <label for="username">Username</label>
+            <input type="text" id="username" placeholder="Enter your username">
+        </div>
+
+        <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" placeholder="Enter your password">
+        </div>
+
+
+
+        <button onclick="login()">Login</button>
+
+        <!-- Registration Disabled
+        <div class="footer">
+            New user? 
+            <a href="signup.html">Create Account</a>
+        </div>
+        -->
+
+        <p class="tagline">✨ Simple • Fast • Live Quiz App ✨</p>
+    </div>
+
+    <script src="config.js"></script>
+    <script>
+        function login() {
+            const userid = document.getElementById("username").value.trim();
+            const pswd = document.getElementById("password").value.trim();
+
+            if (userid === "" || pswd === "") {
+                alert("Please fill all fields");
+                return;
+            }
+
+            fetch(`${CONFIG.API_BASE_URL}/check-user`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ userid, pswd })
+            })
+            .then(res => res.json())
+            .then(data => {
+                alert(data.message);
+
+                if (data.exists) {
+                    localStorage.setItem("quizToken", data.token);
+                    localStorage.setItem("quizRole", data.role);
+                    localStorage.setItem("quizUser", data.userid);
+                    localStorage.setItem("quizName", data.name);
+                    
+                    if(data.role === "student"){
+                        window.location.href = "student_dashboard.html";
+                    }
+                    if(data.role === "teacher"){
+                        window.location.href = "teacher_dashboard.html";
+                    }
+                    if(data.role === "admin"){
+                        window.location.href = "admin_dashboard.html";
+                    }
+                }
+            })
+            .catch(err => console.log(err));
+        }
+
+        // Allow Enter key to submit
+        document.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                login();
+            }
+        });
+    </script>
+</body>
+</html>

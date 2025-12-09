@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Student Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="config.js"></script>
+<script src="/socket.io/socket.io.js"></script>
+
+<style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    body {
+        font-family: "Inter", sans-serif;
+        background: #0F172A;
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 20px;
+        position: relative;
+    }
+
+    body::before {
+        content: '';
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: radial-gradient(circle at 20% 50%, rgba(99, 102, 241, 0.12) 0%, transparent 50%),
+                    radial-gradient(circle at 80% 80%, rgba(6, 182, 212, 0.12) 0%, transparent 50%);
+        pointer-events: none;
+    }
+
+    /* Animation & Panel Styles */
+    body {
+        overflow-x: hidden;
+    }
+
+    .dashboard {
+        transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        will-change: transform;
+        /* Restore original dashboard styles */
+        width: 100%;
+        max-width: 500px;
+        padding: 40px;
+        background: rgba(30, 41, 59, 0.8);
+        backdrop-filter: blur(20px);
+        border-radius: 24px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5),
+                    0 0 0 1px rgba(255, 255, 255, 0.05);
+        margin: auto;
+    }
+
+    .dashboard.move-right {
+        transform: translateX(300px); /* Push right */
+        filter: blur(2px);
+    }
+
+    /* Leaderboard Sliding Panel */
+    .leaderboard-panel {
+        position: fixed;
+        top: 0;
+        left: -400px; /* Hidden LEFT */
+        width: 350px;
+        height: 100vh;
+        background: #0F172A;
+        border-right: 1px solid #334155;
+        box-shadow: 10px 0 30px rgba(0,0,0,0.5);
+        z-index: 2000;
+        transition: left 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        display: flex;
+        flex-direction: column;
+        padding: 24px;
+    }
+
+    .leaderboard-panel.open {
+        left: 0;
+    }
+
+    .leaderboard-header {
+        text-align: center;
+        margin-bottom: 20px;
+        padding-bottom: 15px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .leaderboard-header h2 {
+        font-size: 20px;
+        color: #F1F5F9;
+        margin-bottom: 5px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+
+    .leaderboard-list {
+        flex: 1;
+        overflow-y: auto;
+        padding-right: 5px;
+    }
+
+    .leaderboard-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px;
+        margin-bottom: 8px;
+        background: rgba(255, 255, 255, 0.03);
+        border-radius: 12px;
+        font-size: 14px;
+        transition: transform 0.2s;
+    }
+
+    .rank-badge {
+        width: 24px;
+        height: 24px;
+        border-radius: 6px;
+        background: #334155;
+        color: #94A3B8;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        font-size: 12px;
+    }
+
+    .rank-1 .rank-badge { background: #FCD34D; color: #78350F; }
+    .rank-2 .rank-badge { background: #E5E7EB; color: #374151; }
+    .rank-3 .rank-badge { background: #FDBA74; color: #7C2D12; }
+
+    .user-info { flex: 1; margin-left: 12px; color: #E2E8F0; font-weight: 500; }
+    .score-badge { background: rgba(99, 102, 241, 0.2); color: #818CF8; padding: 4px 8px; border-radius: 8px; font-weight: 600; }
+
+    /* Other styles */
+    .header { text-align: center; margin-bottom: 35px; }
+    .avatar { width: 88px; height: 88px; background: linear-gradient(135deg, #6366F1, #06B6D4); border-radius: 22px; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; font-size: 40px; box-shadow: 0 10px 30px rgba(99, 102, 241, 0.3); animation: float 3s ease-in-out infinite; }
+    @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+    h1 { font-size: 30px; margin-bottom: 10px; color: #F1F5F9; font-weight: 700; }
+    h3 { font-size: 16px; color: #94A3B8; font-weight: 400; }
+    .menu-container { display: flex; flex-direction: column; gap: 14px; margin-bottom: 24px; }
+    .menu-button { background: rgba(51, 65, 85, 0.5); border: 1px solid rgba(255, 255, 255, 0.08); padding: 18px 24px; border-radius: 14px; color: #F1F5F9; font-size: 16px; display: flex; align-items: center; gap: 14px; cursor: pointer; transition: all 0.3s ease; font-family: inherit; font-weight: 500; text-decoration: none; }
+    .menu-button:hover { background: rgba(99, 102, 241, 0.2); border-color: rgba(99, 102, 241, 0.4); transform: translateX(8px); }
+    .menu-button.primary { background: linear-gradient(135deg, #6366F1, #8B5CF6); border-color: transparent; box-shadow: 0 8px 24px rgba(99, 102, 241, 0.3); }
+    .menu-button.danger { background: rgba(239, 68, 68, 0.15); border-color: rgba(239, 68, 68, 0.3); color: #FCA5A5; }
+    .connection-status { text-align: center; padding: 14px; background: rgba(51, 65, 85, 0.3); border-radius: 10px; font-size: 14px; color: #94A3B8; display: flex; align-items: center; justify-content: center; gap: 10px; }
+    .status-dot { width: 10px; height: 10px; border-radius: 50%; }
+    .status-connected { background: #10B981; box-shadow: 0 0 12px rgba(16, 185, 129, 0.6); }
+    .status-disconnected { background: #EF4444; box-shadow: 0 0 12px rgba(239, 68, 68, 0.6); }
+    .profile-widget { position: fixed; top: 20px; right: 20px; background: rgba(30, 41, 59, 0.8); backdrop-filter: blur(20px); padding: 8px 16px 8px 8px; border-radius: 50px; border: 1px solid rgba(255, 255, 255, 0.1); display: flex; align-items: center; gap: 12px; z-index: 1000; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2); transition: transform 0.3s ease; }
+    .profile-avatar { width: 40px; height: 40px; background: linear-gradient(135deg, #F59E0B, #D97706); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; color: white; font-size: 18px; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3); }
+    .profile-info { display: flex; flex-direction: column; }
+    .profile-name { color: #F1F5F9; font-weight: 600; font-size: 14px; }
+    .profile-role { color: #94A3B8; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+    /* Notification Styles */
+    .notification-toast {
+        background: rgba(30, 41, 59, 0.95);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(99, 102, 241, 0.3);
+        border-radius: 16px;
+        padding: 16px;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+        cursor: pointer;
+        animation: slideIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        border-left: 4px solid #10B981;
+        transition: transform 0.2s;
+    }
+
+    .notification-toast:hover {
+        transform: translateY(-2px) scale(1.02);
+    }
+
+    .notification-content {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .notification-icon {
+        font-size: 24px;
+        animation: bounce 2s infinite;
+    }
+
+    .notification-text {
+        color: #F8FAFC;
+        font-weight: 600;
+        font-size: 14px;
+        line-height: 1.4;
+    }
+
+    .notification-btn {
+        background: linear-gradient(135deg, #10B981, #059669);
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 8px;
+        font-size: 12px;
+        font-weight: 700;
+        cursor: pointer;
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+    }
+
+    @keyframes slideIn {
+        from { opacity: 0; transform: translateY(-20px) scale(0.9); }
+        to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    @keyframes bounce {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-3px); }
+    }
+</style>
+</head>
+<body>
+
+<!-- Profile Widget -->
+<div class="profile-widget" id="profileWidget" style="cursor: pointer;">
+    <div class="profile-avatar" id="profileAvatar">?</div>
+    <div class="profile-info">
+        <span class="profile-name" id="profileName">Loading...</span>
+        <span class="profile-role" id="profileRole">Student</span>
+    </div>
+</div>
+
+<!-- Leaderboard Sliding Panel -->
+<div id="leaderboardPanel" class="leaderboard-panel">
+    <div class="leaderboard-header">
+         <div style="display:flex; justify-content:space-between; align-items:center;">
+             <h2 style="margin:0;">🏆 Leaderboard</h2>
+             <button onclick="closeLeaderboard()" style="background:none; border:none; color:#94A3B8; cursor:pointer;">Close</button>
+         </div>
+         <p style="color:#94A3B8; font-size:12px; margin-top:5px;">Top performers across all quizzes</p>
+    </div>
+    <div id="leaderboardList" class="leaderboard-list">
+        <div style="text-align:center; padding:20px; color:#94A3B8;">Loading rankings...</div>
+    </div>
+</div>
+
+<!-- Main Dashboard -->
+<div class="dashboard" id="mainDashboard">
+        <div class="header">
+            <h1 class="welcome-text">👋 Hello, <span id="studentName">Student</span></h1>
+            <div id="connectionStatus" class="connection-status">
+                <div class="status-dot" id="statusDot"></div>
+                <span id="connectionText">Connecting...</span>
+            </div>
+        </div>
+    <div id="notificationArea"></div>
+
+    <div class="menu-container">
+        <button class="menu-button primary" onclick="location.href='quiz_list.html'">
+            <span>📝</span>
+            <span>Attend Quiz</span>
+        </button>
+
+        <button class="menu-button" onclick="location.href='student_analytics.html'">
+            <span>📊</span>
+            <span>View Analytics</span>
+        </button>
+        
+        <button class="menu-button primary" onclick="openLeaderboard()" style="background: linear-gradient(135deg, #F59E0B, #D97706); box-shadow: 0 8px 24px rgba(245, 158, 11, 0.3);">
+            <span>🏆</span>
+            <span>Leaderboard</span>
+        </button>
+
+        <button class="menu-button danger" onclick="logout()">
+            <span>🚪</span>
+            <span>Logout</span>
+        </button>
+    </div>
+
+
+</div>
+
+<script>
+    const SOCKET_URL = CONFIG.SOCKET_URL;
+    const API_URL = CONFIG.API_BASE_URL;
+    let socket;
+    let currentUserid;
+
+    function openLeaderboard() {
+        document.getElementById('mainDashboard').classList.add('move-right');
+        document.getElementById('leaderboardPanel').classList.add('open');
+        fetchLeaderboard();
+    }
+
+    function closeLeaderboard() {
+        document.getElementById('mainDashboard').classList.remove('move-right');
+        document.getElementById('leaderboardPanel').classList.remove('open');
+    }
+
+    async function fetchLeaderboard() {
+        const list = document.getElementById('leaderboardList');
+        if(!list.children.length || list.innerText.includes('Loading')) 
+             list.innerHTML = `<div style="text-align:center; padding:20px; color:#94A3B8;">Loading rankings...</div>`;
+
+        try {
+            const token = localStorage.getItem("quizToken");
+            const res = await fetch(`${API_URL}/api/leaderboard`, {
+                 headers: { "Authorization": "Bearer " + token }
+            });
+            const data = await res.json();
+
+            list.innerHTML = data.map((student, index) => {
+                const rankClass = index < 3 ? `rank-${index + 1}` : '';
+                return `
+                <div class="leaderboard-item ${rankClass}">
+                    <div class="rank-badge">${index + 1}</div>
+                    <div class="user-info">${student.userid}</div>
+                    <div class="score-badge">${student.percentage}%</div>
+                </div>
+                `;
+            }).join('');
+        } catch (e) {
+            console.error(e);
+            list.innerHTML = `<div style="text-align:center; color:#EF4444;">Failed to load leaderboard</div>`;
+        }
+    }
+
+    async function validate() {
+        const token = localStorage.getItem("quizToken");
+        if (!token) {
+            alert("Please login first");
+            location.href = "login.html";
+            return;
+        }
+
+        try {
+            const res = await fetch(`${API_URL}/dashboard`, {
+                headers: { "Authorization": "Bearer " + token }
+            });
+
+            if (!res.ok) {
+                alert("Session expired. Please login again.");
+                localStorage.clear();
+                location.href = "login.html";
+                return;
+            }
+
+            const data = await res.json();
+            
+            if (data.user.role !== 'student') {
+                alert("Access denied.");
+                location.href = "login.html";
+                return;
+            }
+
+            currentUserid = data.user.userid;
+            const storedName = localStorage.getItem("quizName") || currentUserid;
+            const storedRole = data.user.role;
+            
+            if (storedName) {
+                document.getElementById("studentName").innerText = storedName;
+                document.getElementById("profileName").innerText = storedName;
+                
+                // Set Avatar Initial
+                const initial = storedName.charAt(0).toUpperCase();
+                document.getElementById("profileAvatar").innerText = initial;
+            }
+            if (storedRole) {
+                document.getElementById("profileRole").innerText = storedRole;
+            }
+
+            initializeSocket();
+            checkForNotifications();
+
+        } catch (err) {
+            console.error(err);
+            alert(`Network error: ${err.message}. Please check your connection/server.`);
+            location.href = "login.html";
+        }
+    }
+
+    function initializeSocket() {
+        socket = io(SOCKET_URL);
+
+        socket.on('connect', () => {
+            console.log('Connected to server');
+            updateConnectionStatus(true);
+            socket.emit('student_joined', { userid: currentUserid });
+        });
+
+        // -----------------------------
+        // FIX: Check if already connected
+        // -----------------------------
+        if (socket.connected) {
+            console.log('Socket already connected');
+            updateConnectionStatus(true);
+            socket.emit('student_joined', { userid: currentUserid });
+        }
+
+        socket.on('disconnect', () => {
+            console.log('Disconnected from server');
+            updateConnectionStatus(false);
+        });
+
+        socket.on('connect_error', (error) => {
+            console.error('Connection error:', error);
+            updateConnectionStatus(false);
+        });
+
+        socket.on('send_quiz_to_students', (data) => {
+             console.log("Quiz received:", data);
+             showNotification(`Live Quiz Started: ${data.title}`, `attend_quiz.html?quizId=${data.id}`);
+        });
+    }
+
+    function updateConnectionStatus(connected) {
+        const statusDot = document.getElementById('statusDot');
+        const connectionText = document.getElementById('connectionText');
+        
+        if (connected) {
+            statusDot.classList.remove('status-disconnected');
+            statusDot.classList.add('status-connected');
+            connectionText.textContent = 'Connected to server';
+        } else {
+            statusDot.classList.remove('status-connected');
+            statusDot.classList.add('status-disconnected');
+            connectionText.textContent = 'Disconnected from server';
+        }
+    }
+
+    function showNotification(text, link) {
+        const area = document.getElementById('notificationArea');
+        area.innerHTML = `
+            <div class="notification-toast" onclick="location.href='${link}'">
+                <div class="notification-content">
+                    <span class="notification-icon">🔔</span>
+                    <span class="notification-text">${text}</span>
+                </div>
+                <button class="notification-btn">Join</button>
+            </div>
+        `;
+    }
+
+    async function checkForNotifications() {
+        // Check for active quiz via simple fetch if needed
+    }
+
+    function logout() {
+        if (confirm('Are you sure you want to logout?')) {
+            localStorage.clear();
+            location.href = "login.html";
+        }
+    }
+
+    validate();
+</script>
+</body>
+</html>

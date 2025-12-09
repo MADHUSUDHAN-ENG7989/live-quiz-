@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leaderboard</title>
+    <script src="config.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: "Inter", sans-serif;
+            background: #0F172A;
+            min-height: 100vh;
+            color: #F1F5F9;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(30, 41, 59, 0.8);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        h1 { text-align: center; margin-bottom: 30px; font-size: 32px; font-weight: 700; }
+        .back-btn {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: #94A3B8;
+            text-decoration: none;
+            font-size: 14px;
+            transition: color 0.3s;
+        }
+        .back-btn:hover { color: #F1F5F9; }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            padding: 16px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        th {
+            background: rgba(51, 65, 85, 0.5);
+            color: #94A3B8;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 12px;
+            letter-spacing: 1px;
+        }
+        tr:hover { background: rgba(255, 255, 255, 0.02); }
+        .top-rank-1 { background: rgba(251, 191, 36, 0.1); border-left: 4px solid #FCD34D; }
+        .top-rank-2 { background: rgba(229, 231, 235, 0.1); border-left: 4px solid #E5E7EB; }
+        .top-rank-3 { background: rgba(253, 186, 116, 0.1); border-left: 4px solid #FDBA74; }
+        
+        .rank-icon { margin-right: 8px; font-size: 1.2em; }
+        
+        .loading { text-align: center; padding: 40px; color: #94A3B8; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <a href="teacher_dashboard.html" class="back-btn">← Back to Dashboard</a>
+    <h1>🏆 Student Leaderboard</h1>
+    <p style="text-align: center; color: #94A3B8; margin-bottom: 20px;">Based on percentage of marks in the last 3 quizzes</p>
+
+    <div id="loading" class="loading">Loading leaderboard data...</div>
+    
+    <table id="leaderboardTable" style="display: none;">
+        <thead>
+            <tr>
+                <th>Rank</th>
+                <th>Student ID</th>
+                <th>Total Score</th>
+                <th>Total Possible</th>
+                <th>Percentage</th>
+            </tr>
+        </thead>
+        <tbody id="leaderboardBody"></tbody>
+    </table>
+</div>
+
+<script>
+const API_URL = CONFIG.API_BASE_URL;
+
+async function fetchLeaderboard() {
+    const token = localStorage.getItem("quizToken");
+    if (!token) { location.href = "login.html"; return; }
+
+    try {
+        const res = await fetch(`${API_URL}/api/leaderboard`, {
+            headers: { "Authorization": "Bearer " + token }
+        });
+        
+        if (!res.ok) throw new Error("Failed to fetch leaderboard");
+        
+        const data = await res.json();
+        renderLeaderboard(data);
+    } catch (err) {
+        console.error(err);
+        document.getElementById("loading").textContent = "Error loading leaderboard.";
+    }
+}
+
+function renderLeaderboard(data) {
+    const tbody = document.getElementById("leaderboardBody");
+    const table = document.getElementById("leaderboardTable");
+    const loading = document.getElementById("loading");
+    
+    tbody.innerHTML = "";
+    
+    data.forEach((student, index) => {
+        const tr = document.createElement("tr");
+        
+        let rankDisplay = `#${index + 1}`;
+        
+        if (index === 0) {
+            tr.className = "top-rank-1";
+            rankDisplay = `<span class="rank-icon">🥇</span> #${index + 1}`;
+        }
+        if (index === 1) {
+            tr.className = "top-rank-2";
+            rankDisplay = `<span class="rank-icon">🥈</span> #${index + 1}`;
+        }
+        if (index === 2) {
+            tr.className = "top-rank-3";
+            rankDisplay = `<span class="rank-icon">🥉</span> #${index + 1}`;
+        }
+        
+        tr.innerHTML = `
+            <td>${rankDisplay}</td>
+            <td style="font-weight: 500;">${student.userid}</td>
+            <td>${student.totalScore}</td>
+            <td>${student.totalPossible}</td>
+            <td style="color: ${index < 3 ? '#F1F5F9' : '#94A3B8'}; font-weight: ${index < 3 ? 'bold' : 'normal'};">${student.percentage}%</td>
+        `;
+        tbody.appendChild(tr);
+    });
+    
+    loading.style.display = "none";
+    table.style.display = "table";
+}
+
+fetchLeaderboard();
+</script>
+
+</body>
+</html>

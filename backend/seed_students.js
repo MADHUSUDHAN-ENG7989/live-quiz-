@@ -1,0 +1,141 @@
+import mongoose from 'mongoose';
+import dotenv from 'dotenv';
+import bcrypt from 'bcrypt';
+import logindata from './models/logindata.js';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+dotenv.config({ path: path.join(__dirname, '.env') });
+
+const rawData = `24BD1A0581	A RISHITH KUMAR	3799
+24BD1A0582	AAVULA SREENATH	3800
+24BD1A0583	ABHIRAM GIRISH AHANKARI	3801
+24BD1A0584	AITHA THADHAGATH RAM	3802
+24BD1A0585	AKSHADHA THAMMANDRA	3803
+24BD1A0586	ANUMALA MANIGREEVA	3804
+24BD1A0587	AVVARI SAI MONEESH	3805
+24BD1A0588	BANOTH SHIVANI	3806
+24BD1A0589	BANOTH SREEYA	3807
+24BD1A058A	BANOTH VAMSHI KRISHNA	3808
+24BD1A058B	BOMMAGONI SAI MANASWI	3809
+24BD1A058C	BURUGULA SAIGEETHIKA	3810
+24BD1A058D	CHAKRAPANDA SATHWIK	3811
+24BD1A058E	CHANDUBATLA SATHVIK	3812
+24BD1A058F	CHEBROLU SWATHI	3813
+24BD1A058G	CHIKYALA MEDHANSH RAO	3814
+24BD1A058H	CHILUMULA MADHU SUDHAN	3815
+24BD1A058J	CILIVERU MANI MUKTESH	3816
+24BD1A058K	D NAYANEESH	3817
+24BD1A058L	ERUVENTI AKSHITHA	3818
+24BD1A058M	GAKKA ALANKRITHA	3819
+24BD1A058N	GOLLAPALLI PRANATHI	3820
+24BD1A058P	GUNDA SWARAN	3821
+24BD1A058Q	IMMADISETTY BHAVYA SREE	3822
+24BD1A058R	JAKKAPALLI ROHITH	3823
+24BD1A058T	KAIPU SURYA SRIKAR REDDY	3824
+24BD1A058U	KAIRAMKONDA CHAITHANYA	3825
+24BD1A058V	KANTAM PAVAN SAI REDDY	3826
+24BD1A058W	KHUSHI AGRAWAL	3827
+24BD1A058X	KOLIPAKA VISHAL	3828
+24BD1A058Y	KONDA NEHA	3829
+24BD1A058Z	KURA VIGNESH REDDY	3830
+24BD1A0591	KYATHAM SHASHIDHAR REDDY	3831
+24BD1A0592	MALLAJOSYULA ADITI	3832
+24BD1A0593	MEDISETTY JAGADABHI RAM	3833
+24BD1A0594	MUDDHASANI SANJANA VARMA	3834
+24BD1A0595	NARA NEERAJA	3835
+24BD1A0596	NARAMOLLA AKSHAY	3836
+24BD1A0597	NEELA AKSHAYA SAI	3837
+24BD1A0598	NIKUNJ JAYESH	3838
+24BD1A0599	NISTALA SHIVA SHASHANK	3839
+24BD1A059A	NUGURI LAXMI CHANDRAYANI	3840
+24BD1A059B	PAGIDIPALLI SUNNY KIRAN	3841
+24BD1A059C	PALLA HARI PRIYA	3842
+24BD1A059D	PALLA PAVAN KUMAR	3843
+24BD1A059E	POLASA SRIKAR	3844
+24BD1A059F	RACHAKONDA JOSHITHA	3845
+24BD1A059G	RENTALA RISHEETH PREETHAM	3846
+24BD1A059H	SAMANVI CHIDAMBARAM	3847
+24BD1A059J	SANAPALA NIRMAL KUMAR	3848
+24BD1A059K	SANGI SETTY AKSHITHA	3849
+24BD1A059L	SOMA SRI LASYA	3850
+24BD1A059M	SREEHARSHA MANCHOLLA	3851
+24BD1A059N	SUDIREDDY SAMANVITH REDDY	3852
+24BD1A059P	TALLPALLY SAI SIDDHARTH	3853
+24BD1A059Q	THAKKELLAPALLI SUHAS	3854
+24BD1A059R	TIRUKOTI VINAY	3855
+24BD1A059T	UDATA VENKATA SURYA PAVAN KUMAR	3856
+24BD1A059U	VEERABOMMA ABINAV	3857
+24BD1A059V	VITTA KARTHIKEYA	3858
+24BD1A059W	VURUPUTURI ANIKETH	3859
+24BD1A059X	YAMGANTY VIVEKVARDHAN GOUD	3860
+24BD1A059Y	YARAGANI VARSHITH	3861
+24BD1A059Z	YEDAVALLI GRITA	3862
+24BD1A05K8	YERRIBOINA SRI HARSHITHA	3863
+25BD5A0529	CHOKKARAPU KUSHAL	4559
+25BD5A0530	DASA SUCHITH	4560
+25BD5A0531	JAGIRI SRIRAM	4561
+25BD5A0532	KANURU SUBHASH	4562
+25BD5A0533	PARELLA TEJ GURU	4563
+25BD5A0534	SHAIK OWAIZ MOINUDDIN	4564
+25BD5A0535	THATIKONDA RAHUL	4565`;
+
+// Process the raw data
+const students = rawData.trim().split('\n').map(line => {
+    const [hallticket, name, id] = line.trim().split(/\t+/);
+    return { userid: hallticket, name };
+});
+
+const connectDB = async () => {
+    try {
+        const mongoURI = process.env.MONGO_URI || "mongodb://localhost:27017/loginDB";
+        await mongoose.connect(mongoURI);
+        console.log("✅ Custom Seeder Connected to MongoDB");
+    } catch (err) {
+        console.error("❌ DB Connection Error:", err.message);
+        process.exit(1);
+    }
+};
+
+const seedStudents = async () => {
+    await connectDB();
+
+    // Clear existing data
+    console.log("🧹 Clearing existing users...");
+    await logindata.deleteMany({ role: "student" });
+
+    const hashedPassword = await bcrypt.hash("kmit", 10);
+    let count = 0;
+    
+    console.log(`Processing ${students.length} students...`);
+
+    for (const student of students) {
+        if (!student.userid) continue;
+
+        try {
+            const newUser = new logindata({
+                userid: student.userid,
+                name: student.name,
+                password: hashedPassword,
+                role: 'student',
+                section: 'A' // Default section since not provided
+            });
+
+            await newUser.save();
+            count++;
+        } catch (err) {
+            console.error(`Error processing ${student.userid}:`, err.message);
+        }
+    }
+
+    console.log(`\n🎉 User Seeding Completed!`);
+    console.log(`✅ Added: ${count}`);
+    
+    await mongoose.disconnect();
+    process.exit(0);
+};
+
+seedStudents();

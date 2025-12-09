@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>System Health Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="config.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: "Inter", sans-serif;
+            background: #0F172A;
+            color: #F1F5F9;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #334155;
+        }
+        .header h1 { font-size: 24px; font-weight: 700; color: #38BDF8; }
+        .back-btn {
+            padding: 10px 20px;
+            background: #334155;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 500;
+            transition: background 0.2s;
+        }
+        .back-btn:hover { background: #475569; }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .card {
+            background: #1E293B;
+            padding: 25px;
+            border-radius: 16px;
+            border: 1px solid #334155;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card-title {
+            font-size: 14px;
+            color: #94A3B8;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+        }
+
+        .card-value {
+            font-size: 36px;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 5px;
+        }
+
+        .card-subtext {
+            font-size: 13px;
+            color: #64748B;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        .status-online { background: #10B981; box-shadow: 0 0 10px #10B981; }
+        .status-offline { background: #EF4444; }
+
+        /* Progress Bar for Memory */
+        .progress-bg {
+            height: 8px;
+            background: #334155;
+            border-radius: 4px;
+            margin-top: 15px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background: #6366F1;
+            width: 0%;
+            transition: width 0.5s ease;
+        }
+
+        /* CPU Load Graph (Simulated with CSS bars) */
+        .cpu-graph {
+            display: flex;
+            align-items: flex-end;
+            height: 60px;
+            gap: 4px;
+            margin-top: 15px;
+        }
+        .cpu-bar {
+            flex: 1;
+            background: #38BDF8;
+            opacity: 0.5;
+            border-radius: 2px 2px 0 0;
+            transition: height 0.3s;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        .loading { animation: pulse 1.5s infinite; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <h1>🖥️ System Health Monitor</h1>
+        <div style="display: flex; gap: 10px;">
+             <button onclick="switchTab('simple')" id="btn-simple" class="back-btn" style="background: #3B82F6;">Simple View</button>
+             <button onclick="switchTab('advanced')" id="btn-advanced" class="back-btn">Advanced Dashboard (Grafana)</button>
+             <a href="admin_dashboard.html" class="back-btn" style="margin-left: 20px;">Back to Dashboard</a>
+        </div>
+    </div>
+
+    <!-- Simple View -->
+    <div class="dashboard-grid" id="simple-view">
+        <!-- Server Status -->
+        <div class="card">
+            <div class="card-title">Server Status</div>
+            <div class="card-value" style="font-size: 24px;">
+                <span id="statusDot" class="status-indicator status-offline"></span>
+                <span id="serverStatus">Connecting...</span>
+            </div>
+            <div class="card-subtext" id="uptimeText">Uptime: 0s</div>
+        </div>
+
+        <!-- Active Connections -->
+        <div class="card">
+            <div class="card-title">Active Connections</div>
+            <div class="card-value" id="activeConnections">0</div>
+            <div class="card-subtext">Socket.IO Clients</div>
+        </div>
+
+        <!-- Memory Usage -->
+        <div class="card">
+            <div class="card-title">Memory Usage (RSS)</div>
+            <div class="card-value" id="memoryUsage">0 MB</div>
+            <div class="progress-bg">
+                <div class="progress-fill" id="memoryBar"></div>
+            </div>
+            <div class="card-subtext" style="margin-top: 8px;" id="heapText">Heap: 0 / 0 MB</div>
+        </div>
+
+        <!-- CPU Load -->
+        <div class="card">
+            <div class="card-title">System Load (1m)</div>
+            <div class="card-value" id="cpuLoad">0.00</div>
+            <div class="cpu-graph" id="cpuGraph">
+                <!-- Bars generated by JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Advanced View (Grafana IFrame) -->
+    <div id="advanced-view" style="display: none; height: 800px; background: #1E293B; border-radius: 16px; border: 1px solid #334155; overflow: hidden;">
+        <!-- Tip for user -->
+        <div style="padding: 10px; text-align: center; background: #334155; font-size: 12px; color: #cbd5e1;">
+            If the dashboard below refuses to connect, please ensure `allow_embedding = true` is set in your grafana.ini file.
+        </div>
+        <iframe id="grafanaFile" src="" width="100%" height="100%" frameborder="0"></iframe>
+    </div>
+</div>
+
+<script>
+    const API_URL = CONFIG.API_BASE_URL + '/api/system-health';
+    
+    // Set Grafana URL
+    const grafanaBase = CONFIG.GRAFANA_URL || 'http://localhost:3001';
+    // Append the specific dashboard path if the user hasn't provided a full dashboard URL
+    // Assuming CONFIG.GRAFANA_URL is just the base domain in typical use cases
+    const grafanaSrc = grafanaBase.includes('/d/') ? grafanaBase : `${grafanaBase}/d/quiz-master-monitor/quiz-master-system-monitor?orgId=1&kiosk`;
+    document.getElementById('grafanaFile').src = grafanaSrc;
+    const REFRESH_RATE = 2000; // 2 seconds
+
+    function switchTab(tab) {
+        if (tab === 'simple') {
+            document.getElementById('simple-view').style.display = 'grid';
+            document.getElementById('advanced-view').style.display = 'none';
+            document.getElementById('btn-simple').style.background = '#3B82F6';
+            document.getElementById('btn-advanced').style.background = '#334155';
+        } else {
+            document.getElementById('simple-view').style.display = 'none';
+            document.getElementById('advanced-view').style.display = 'block';
+            document.getElementById('btn-simple').style.background = '#334155';
+            document.getElementById('btn-advanced').style.background = '#3B82F6';
+        }
+    }
+
+    // Initialize CPU Graph bars
+    const cpuGraph = document.getElementById('cpuGraph');
+    const historyLength = 20;
+    const loadHistory = new Array(historyLength).fill(0);
+
+    function initGraph() {
+        cpuGraph.innerHTML = '';
+        for (let i = 0; i < historyLength; i++) {
+            const bar = document.createElement('div');
+            bar.className = 'cpu-bar';
+            bar.style.height = '0%';
+            cpuGraph.appendChild(bar);
+        }
+    }
+    initGraph();
+
+    function formatBytes(bytes) {
+        return (bytes / 1024 / 1024).toFixed(1);
+    }
+
+    function formatUptime(seconds) {
+        const h = Math.floor(seconds / 3600);
+        const m = Math.floor((seconds % 3600) / 60);
+        const s = Math.floor(seconds % 60);
+        return `${h}h ${m}m ${s}s`;
+    }
+
+    async function fetchHealth() {
+        const token = localStorage.getItem("quizToken");
+        if (!token) {
+            alert("Please login as Admin to view this page.");
+            window.location.href = "login.html";
+            return;
+        }
+
+        try {
+            const response = await fetch(API_URL, {
+                headers: { "Authorization": "Bearer " + token }
+            });
+            
+            if (response.status === 401 || response.status === 403) {
+                alert("Access Denied: Admins only.");
+                window.location.href = "login.html";
+                return;
+            }
+
+            if (!response.ok) throw new Error("API Error");
+            const data = await response.json();
+
+            // Update Status
+            document.getElementById('serverStatus').textContent = "Online";
+            document.getElementById('serverStatus').style.color = "#10B981";
+            document.getElementById('statusDot').className = "status-indicator status-online";
+            document.getElementById('uptimeText').textContent = `Uptime: ${formatUptime(data.uptime)}`;
+
+            // Update Connections
+            document.getElementById('activeConnections').textContent = data.activeConnections;
+
+            // Update Memory
+            const rss = formatBytes(data.memory.rss);
+            const heapUsed = formatBytes(data.memory.heapUsed);
+            const heapTotal = formatBytes(data.memory.heapTotal);
+            
+            document.getElementById('memoryUsage').textContent = `${rss} MB`;
+            document.getElementById('heapText').textContent = `Heap: ${heapUsed} / ${heapTotal} MB`;
+            
+            // Simple visual calculation for memory bar (assuming 512MB as a visual cap for "full")
+            const memPercent = Math.min((data.memory.rss / 1024 / 1024 / 512) * 100, 100);
+            document.getElementById('memoryBar').style.width = `${memPercent}%`;
+
+            // Update CPU Load
+            const load = data.loadAvg[0].toFixed(2);
+            document.getElementById('cpuLoad').textContent = load;
+
+            // Update Graph
+            loadHistory.shift();
+            loadHistory.push(data.loadAvg[0]);
+            
+            const bars = document.querySelectorAll('.cpu-bar');
+            const maxLoad = Math.max(...loadHistory, 1); // Normalize against max seen or at least 1
+            
+            bars.forEach((bar, i) => {
+                const height = (loadHistory[i] / maxLoad) * 100;
+                bar.style.height = `${Math.max(height, 5)}%`; // Min 5% height
+            });
+
+        } catch (err) {
+            console.error("Health check failed:", err);
+            document.getElementById('serverStatus').textContent = "Offline / Error";
+            document.getElementById('serverStatus').style.color = "#EF4444";
+            document.getElementById('statusDot').className = "status-indicator status-offline";
+        }
+    }
+
+    // Start polling
+    fetchHealth();
+    setInterval(fetchHealth, REFRESH_RATE);
+
+</script>
+
+</body>
+</html>

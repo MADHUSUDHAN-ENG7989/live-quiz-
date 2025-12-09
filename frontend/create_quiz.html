@@ -1,0 +1,1009 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Create Quiz</title>
+<script src="config.js"></script>
+<script src="/socket.io/socket.io.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<link rel="stylesheet" href="https://npmcdn.com/flatpickr/dist/themes/dark.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+<style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+        font-family: "Inter", sans-serif;
+        background: #0F172A;
+        min-height: 100vh;
+        padding: 20px;
+    }
+
+    body::before {
+        content: '';
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: radial-gradient(circle at 30% 30%, rgba(139, 92, 246, 0.1) 0%, transparent 50%),
+                    radial-gradient(circle at 70% 70%, rgba(99, 102, 241, 0.1) 0%, transparent 50%);
+        pointer-events: none;
+    }
+
+    .container {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 20px;
+        padding-bottom: 120px; /* Space for footer */
+        position: relative;
+        z-index: 1;
+    }
+
+    .header {
+        text-align: center;
+        margin-bottom: 40px;
+    }
+
+    h1 {
+        font-size: 36px;
+        color: #F1F5F9;
+        margin-bottom: 10px;
+        font-weight: 700;
+    }
+
+    .subtitle {
+        color: #94A3B8;
+        font-size: 16px;
+    }
+
+    .card {
+        background: rgba(30, 41, 59, 0.8);
+        backdrop-filter: blur(20px);
+        padding: 32px;
+        border-radius: 20px;
+        margin-bottom: 24px;
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    }
+
+    .card h3 {
+        color: #F1F5F9;
+        font-size: 20px;
+        margin-bottom: 24px;
+        font-weight: 600;
+    }
+
+    .form-group {
+        margin-bottom: 24px;
+    }
+
+    label {
+        display: block;
+        color: #F1F5F9;
+        font-weight: 500;
+        margin-bottom: 10px;
+        font-size: 14px;
+    }
+
+    input, textarea, select {
+        width: 100%;
+        padding: 14px 16px;
+        border: 1px solid #334155;
+        border-radius: 12px;
+        font-size: 15px;
+        font-family: "Inter", sans-serif;
+        transition: all 0.3s ease;
+        background: rgba(15, 23, 42, 0.5);
+        color: #F1F5F9;
+        resize: vertical;
+    }
+
+    input::placeholder, textarea::placeholder {
+        color: #64748B;
+    }
+
+    input:focus, textarea:focus, select:focus {
+        outline: none;
+        border-color: #8B5CF6;
+        background: rgba(15, 23, 42, 0.8);
+        box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+    }
+
+    small {
+        display: block;
+        margin-top: 8px;
+        color: #64748B;
+        font-size: 13px;
+    }
+
+    .btn {
+        padding: 14px 28px;
+        border: none;
+        border-radius: 12px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #8B5CF6, #6366F1);
+        color: white;
+        box-shadow: 0 10px 30px rgba(139, 92, 246, 0.3);
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 15px 40px rgba(139, 92, 246, 0.4);
+    }
+
+    .btn-success {
+        background: linear-gradient(135deg, #10B981, #059669);
+        color: white;
+        box-shadow: 0 10px 30px rgba(16, 185, 129, 0.3);
+        padding: 14px 28px;
+        font-size: 16px;
+    }
+
+    .btn-success:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 15px 40px rgba(16, 185, 129, 0.4);
+    }
+
+    .btn-danger {
+        background: linear-gradient(135deg, #EF4444, #DC2626);
+        color: white;
+        padding: 8px 16px;
+        font-size: 14px;
+    }
+
+    .btn-danger:hover {
+        background: linear-gradient(135deg, #DC2626, #B91C1C);
+    }
+
+    .question-item {
+        background: rgba(51, 65, 85, 0.4);
+        padding: 20px;
+        margin: 16px 0;
+        border-radius: 12px;
+        border: 1px solid #334155;
+        transition: all 0.3s ease;
+    }
+
+    .question-item:hover {
+        border-color: #8B5CF6;
+        box-shadow: 0 8px 24px rgba(139, 92, 246, 0.2);
+    }
+    .question-item strong {
+        color: #F1F5F9;
+        display: block;
+        margin-bottom: 12px;
+        font-size: 16px;
+    }
+
+    .question-item small {
+        color: #94A3B8;
+        font-size: 14px;
+        line-height: 1.6;
+    }
+
+    .question-count {
+        display: inline-block;
+        background: linear-gradient(135deg, #8B5CF6, #6366F1);
+        color: white;
+        padding: 6px 16px;
+        border-radius: 20px;
+        font-weight: 600;
+        font-size: 14px;
+    }
+
+    .no-questions {
+        text-align: center;
+        padding: 40px 20px;
+        color: #64748B;
+        font-size: 15px;
+    }
+
+    .timer-mode-options {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        margin-top: 10px;
+    }
+
+    .timer-option {
+        padding: 12px;
+        border: 2px solid #334155;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-align: center;
+        color: #94A3B8;
+    }
+
+    .timer-option:hover {
+        border-color: #6366F1;
+        background: rgba(99, 102, 241, 0.1);
+        color: #F1F5F9;
+    }
+
+    .timer-option.selected {
+        border-color: #8B5CF6;
+        background: rgba(139, 92, 246, 0.2);
+        color: #F1F5F9;
+        box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.2);
+    }
+
+    .timer-option input {
+        display: none;
+    }
+
+    /* Launch Overlay Styles */
+    .launch-overlay {
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: #0F172A;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        z-index: 2000;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.5s ease;
+    }
+
+    .launch-overlay.active {
+        opacity: 1;
+        pointer-events: all;
+    }
+
+    .rocket-container {
+        font-size: 80px;
+        margin-bottom: 20px;
+        animation: rocketLaunch 2s ease-in-out infinite;
+    }
+
+    @keyframes rocketLaunch {
+        0% { transform: translateY(0) rotate(0deg); }
+        50% { transform: translateY(-20px) rotate(5deg); }
+        100% { transform: translateY(0) rotate(0deg); }
+    }
+
+    .launch-text {
+        color: #F1F5F9;
+        font-size: 24px;
+        font-weight: 700;
+        animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+        0% { opacity: 0.5; }
+        50% { opacity: 1; }
+        100% { opacity: 0.5; }
+    }
+
+    .mode-options {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+        margin-bottom: 24px;
+    }
+
+    .mode-option {
+        padding: 16px;
+        border: 2px solid #334155;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-align: center;
+        color: #94A3B8;
+        font-weight: 600;
+        background: rgba(30, 41, 59, 0.5);
+    }
+
+    .mode-option:hover {
+        border-color: #6366F1;
+        background: rgba(99, 102, 241, 0.1);
+        color: #F1F5F9;
+    }
+
+    .mode-option.selected {
+        border-color: #8B5CF6;
+        background: rgba(139, 92, 246, 0.2);
+        color: #F1F5F9;
+        box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.2);
+    }
+
+    .loading-spinner {
+        display: inline-block;
+        width: 20px;
+        height: 20px;
+        border: 3px solid rgba(255,255,255,0.3);
+        border-radius: 50%;
+        border-top-color: #fff;
+        animation: spin 1s ease-in-out infinite;
+        margin-right: 8px;
+    }
+
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+    
+    /* Flatpickr Customization */
+    .flatpickr-calendar {
+        background: #1E293B;
+        border: 1px solid #334155;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+    .flatpickr-day {
+        color: #F1F5F9;
+    }
+    .flatpickr-day.selected, .flatpickr-day.startRange, .flatpickr-day.endRange, .flatpickr-day.selected.inRange, .flatpickr-day.startRange.inRange, .flatpickr-day.endRange.inRange, .flatpickr-day:hover, .flatpickr-day:focus {
+        background: #6366F1;
+        border-color: #6366F1;
+    }
+    .flatpickr-time input {
+        color: #F1F5F9;
+    }
+    .flatpickr-time .flatpickr-am-pm {
+        color: #F1F5F9;
+    }
+    
+    .schedule-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 12px;
+        margin-bottom: 24px;
+    }
+
+    /* Sticky Footer Styles */
+    .sticky-footer {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: rgba(15, 23, 42, 0.95);
+        backdrop-filter: blur(10px);
+        padding: 20px;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 100;
+        box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.5);
+    }
+
+    .footer-content {
+        max-width: 900px;
+        width: 100%;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .quiz-info-preview {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: #94A3B8;
+        font-size: 14px;
+        font-weight: 500;
+    }
+
+    .divider {
+        color: #475569;
+    }
+
+    .action-buttons {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+
+    .quiz-title-input {
+        background: rgba(30, 41, 59, 0.5);
+        border: 1px solid #334155;
+        color: #F1F5F9;
+        padding: 12px 16px;
+        border-radius: 8px;
+        width: 300px;
+        font-size: 14px;
+    }
+
+    .quiz-title-input:focus {
+        border-color: #8B5CF6;
+        outline: none;
+    }
+</style>
+</head>
+<body>
+
+<main class="container">
+    <div class="header">
+        <h1>Create Live Quiz</h1>
+        <p class="subtitle">Set up your quiz and launch it for students</p>
+    </div>
+
+    <!-- Quiz Settings Card -->
+    <div class="card">
+        <h3>Quiz Settings</h3>
+        
+        <div class="form-group">
+            <label>Schedule Quiz (Optional)</label>
+            <div class="schedule-grid">
+                <div>
+                    <label style="font-size: 12px; color: #94A3B8;">Date</label>
+                    <input type="text" id="scheduleDate" placeholder="Select Date">
+                </div>
+                <div>
+                    <label style="font-size: 12px; color: #94A3B8;">Start Time</label>
+                    <input type="text" id="scheduleStartTime" placeholder="Start Time">
+                </div>
+                <div>
+                    <label style="font-size: 12px; color: #94A3B8;">End Time</label>
+                    <input type="text" id="scheduleEndTime" placeholder="End Time">
+                </div>
+            </div>
+            <small>Leave blank to start immediately</small>
+        </div>
+
+        <div class="form-group">
+            <label>Timer Mode</label>
+            <div class="timer-mode-options">
+                <div class="timer-option selected" onclick="selectTimerMode('per_question')">
+                    <input type="radio" name="timerMode" value="per_question" checked> Per Question
+                </div>
+                <div class="timer-option" onclick="selectTimerMode('whole_quiz')">
+                    <input type="radio" name="timerMode" value="whole_quiz"> Whole Quiz
+                </div>
+            </div>
+            <small>Choose how you want to time this quiz</small>
+        </div>
+
+        <div class="form-group" id="totalQuizTimeContainer" style="display: none;">
+            <label>Total Quiz Time (minutes)</label>
+            <input type="number" id="totalQuizTime" placeholder="30" min="1" value="30">
+            <small>Total time for the entire quiz</small>
+        </div>
+
+        <div class="form-group">
+            <label>Allowed Sections (Optional)</label>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <label style="display: inline-flex; align-items: center; gap: 5px; background: rgba(30, 41, 59, 0.5); padding: 8px 12px; border-radius: 8px; border: 1px solid #334155; cursor: pointer;">
+                    <input type="checkbox" name="allowedSection" value="A" style="width: auto; margin: 0;"> A
+                </label>
+                <label style="display: inline-flex; align-items: center; gap: 5px; background: rgba(30, 41, 59, 0.5); padding: 8px 12px; border-radius: 8px; border: 1px solid #334155; cursor: pointer;">
+                    <input type="checkbox" name="allowedSection" value="B" style="width: auto; margin: 0;"> B
+                </label>
+                <label style="display: inline-flex; align-items: center; gap: 5px; background: rgba(30, 41, 59, 0.5); padding: 8px 12px; border-radius: 8px; border: 1px solid #334155; cursor: pointer;">
+                    <input type="checkbox" name="allowedSection" value="C" style="width: auto; margin: 0;"> C
+                </label>
+                <label style="display: inline-flex; align-items: center; gap: 5px; background: rgba(30, 41, 59, 0.5); padding: 8px 12px; border-radius: 8px; border: 1px solid #334155; cursor: pointer;">
+                    <input type="checkbox" name="allowedSection" value="D" style="width: auto; margin: 0;"> D
+                </label>
+                <label style="display: inline-flex; align-items: center; gap: 5px; background: rgba(30, 41, 59, 0.5); padding: 8px 12px; border-radius: 8px; border: 1px solid #334155; cursor: pointer;">
+                    <input type="checkbox" name="allowedSection" value="E" style="width: auto; margin: 0;"> E
+                </label>
+                <label style="display: inline-flex; align-items: center; gap: 5px; background: rgba(30, 41, 59, 0.5); padding: 8px 12px; border-radius: 8px; border: 1px solid #334155; cursor: pointer;">
+                    <input type="checkbox" name="allowedSection" value="F" style="width: auto; margin: 0;"> F
+                </label>
+                <label style="display: inline-flex; align-items: center; gap: 5px; background: rgba(30, 41, 59, 0.5); padding: 8px 12px; border-radius: 8px; border: 1px solid #334155; cursor: pointer;">
+                    <input type="checkbox" name="allowedSection" value="G" style="width: auto; margin: 0;"> G
+                </label>
+                <label style="display: inline-flex; align-items: center; gap: 5px; background: rgba(30, 41, 59, 0.5); padding: 8px 12px; border-radius: 8px; border: 1px solid #334155; cursor: pointer;">
+                    <input type="checkbox" name="allowedSection" value="H" style="width: auto; margin: 0;"> H
+                </label>
+                <label style="display: inline-flex; align-items: center; gap: 5px; background: rgba(30, 41, 59, 0.5); padding: 8px 12px; border-radius: 8px; border: 1px solid #334155; cursor: pointer;">
+                    <input type="checkbox" name="allowedSection" value="I" style="width: auto; margin: 0;"> I
+                </label>
+            </div>
+            <small>Select sections allowed to take this quiz. Leave blank for all.</small>
+        </div>
+    </div>
+
+    <!-- Creation Mode Selection -->
+    <div class="card">
+        <h3>Creation Mode</h3>
+        <div class="mode-options">
+            <div class="mode-option selected" onclick="setMode('manual')">✍️ Manual Entry</div>
+            <div class="mode-option" onclick="setMode('ai')">✨ AI Generation</div>
+            <div class="mode-option" onclick="setMode('upload')">📄 Upload Document</div>
+        </div>
+    </div>
+
+    <!-- Manual Mode -->
+    <div id="manual-mode" class="mode-content">
+        <div class="card">
+            <h3>Add Question</h3>
+            
+            <div class="form-group">
+                <label>Question Text</label>
+                <textarea id="questionText" rows="3" placeholder="Enter your question here"></textarea>
+            </div>
+
+            <div class="form-group">
+                <label>Option A</label>
+                <input type="text" id="optionA" placeholder="First option">
+            </div>
+
+            <div class="form-group">
+                <label>Option B</label>
+                <input type="text" id="optionB" placeholder="Second option">
+            </div>
+
+            <div class="form-group">
+                <label>Option C</label>
+                <input type="text" id="optionC" placeholder="Third option">
+            </div>
+
+            <div class="form-group">
+                <label>Option D</label>
+                <input type="text" id="optionD" placeholder="Fourth option">
+            </div>
+
+            <div class="form-group">
+                <label>Correct Answer</label>
+                <select id="correctOption">
+                    <option value="">Select correct answer</option>
+                    <option value="A">Option A</option>
+                    <option value="B">Option B</option>
+                    <option value="C">Option C</option>
+                    <option value="D">Option D</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Marks</label>
+                <input type="number" id="marks" placeholder="1" min="1" value="1">
+                <small>Points for this question</small>
+            </div>
+
+            <div class="form-group" id="questionTimeLimitContainer">
+                <label>Time Limit (seconds)</label>
+                <input type="number" id="timeLimit" placeholder="30" min="5" value="30">
+                <small>Time allowed for this question</small>
+            </div>
+
+            <button class="btn btn-primary" onclick="addQuestion()">➕ Add Question</button>
+        </div>
+    </div>
+
+    <!-- AI Mode -->
+    <div id="ai-mode" class="mode-content" style="display: none;">
+        <div class="card">
+            <h3>AI Question Generation</h3>
+            <div class="form-group">
+                <label>Topic</label>
+                <input type="text" id="aiTopic" placeholder="e.g., Solar System, World War II, Photosynthesis">
+            </div>
+            <div class="form-group">
+                <label>Number of Questions</label>
+                <input type="number" id="aiCount" value="5" min="1" max="20">
+            </div>
+            <div class="form-group">
+                <label>Difficulty</label>
+                <select id="aiDifficulty">
+                    <option value="Easy">Easy</option>
+                    <option value="Medium" selected>Medium</option>
+                    <option value="Hard">Hard</option>
+                </select>
+            </div>
+            <button class="btn btn-primary" onclick="generateAIQuiz()" id="btnGenerateAI">✨ Generate Questions</button>
+        </div>
+    </div>
+
+    <!-- Upload Mode -->
+    <div id="upload-mode" class="mode-content" style="display: none;">
+        <div class="card">
+            <h3>Upload Quiz Document</h3>
+            <div class="form-group">
+                <label>Upload PDF or Text File</label>
+                <input type="file" id="docUpload" accept=".pdf,.txt">
+                <small>Upload a document to automatically extract questions using AI.</small>
+            </div>
+            <button class="btn btn-primary" onclick="uploadDocument()" id="btnUploadDoc">📄 Upload & Generate</button>
+        </div>
+    </div>
+
+    <!-- Questions List -->
+    <div class="card">
+        <h3>
+            Questions List 
+            <span class="question-count" id="questionCount">0 Questions</span>
+        </h3>
+        <div id="questionsList">
+            <div class="no-questions">No questions added yet. Add your first question above!</div>
+        </div>
+    </div>
+
+    <!-- Sticky Footer for Actions -->
+    <div class="sticky-footer">
+        <div class="footer-content">
+            <div class="quiz-info-preview">
+                <span id="footerQuestionCount">0 Questions</span>
+                <span class="divider">•</span>
+                <span id="footerTotalMarks">0 Marks</span>
+            </div>
+            <div class="action-buttons">
+                <input type="text" id="quizTitle" placeholder="Enter Quiz Title" class="quiz-title-input">
+                <button class="btn btn-success" onclick="sendQuiz()">🚀 Send Quiz to Students</button>
+            </div>
+        </div>
+    </div>
+</main>
+
+<script>
+const socket = io();
+let quizQuestions = [];
+let selectedTimerMode = 'per_question'; // Default timer mode
+
+// Connection status
+const statusDiv = document.createElement('div');
+statusDiv.style.position = 'fixed';
+statusDiv.style.top = '10px';
+statusDiv.style.right = '10px';
+statusDiv.style.padding = '8px 12px';
+statusDiv.style.borderRadius = '20px';
+statusDiv.style.fontSize = '12px';
+statusDiv.style.fontWeight = 'bold';
+statusDiv.style.zIndex = '1000';
+document.body.appendChild(statusDiv);
+
+function updateStatus(connected) {
+    if (connected) {
+        statusDiv.textContent = '🟢 Connected';
+        statusDiv.style.background = 'rgba(16, 185, 129, 0.2)';
+        statusDiv.style.color = '#10B981';
+        statusDiv.style.border = '1px solid #10B981';
+    } else {
+        statusDiv.textContent = '🔴 Disconnected';
+        statusDiv.style.background = 'rgba(239, 68, 68, 0.2)';
+        statusDiv.style.color = '#EF4444';
+        statusDiv.style.border = '1px solid #EF4444';
+    }
+}
+
+socket.on('connect', () => {
+    console.log('✅ Connected to server');
+    updateStatus(true);
+});
+
+socket.on('disconnect', () => {
+    console.log('❌ Disconnected from server');
+    updateStatus(false);
+});
+
+socket.on('connect_error', (err) => {
+    console.error('Connection error:', err);
+    updateStatus(false);
+});
+
+function selectTimerMode(mode) {
+    selectedTimerMode = mode;
+    
+    // Update UI
+    document.querySelectorAll('.timer-option').forEach(opt => opt.classList.remove('selected'));
+    event.currentTarget.classList.add('selected');
+    document.querySelector(`input[value="${mode}"]`).checked = true;
+    
+    // Show/hide fields based on mode
+    if (mode === 'whole_quiz') {
+        document.getElementById('totalQuizTimeContainer').style.display = 'block';
+        document.getElementById('questionTimeLimitContainer').style.display = 'none';
+    } else {
+        document.getElementById('totalQuizTimeContainer').style.display = 'none';
+        document.getElementById('questionTimeLimitContainer').style.display = 'block';
+    }
+}
+
+function setMode(mode) {
+    // Update UI
+    document.querySelectorAll('.mode-option').forEach(opt => opt.classList.remove('selected'));
+    document.querySelector(`.mode-option[onclick="setMode('${mode}')"]`).classList.add('selected');
+
+    // Hide all modes
+    document.querySelectorAll('.mode-content').forEach(el => el.style.display = 'none');
+
+    // Show selected mode
+    document.getElementById(`${mode}-mode`).style.display = 'block';
+}
+
+function addQuestion() {
+    const questionText = document.getElementById("questionText").value.trim();
+    const optionA = document.getElementById("optionA").value.trim();
+    const optionB = document.getElementById("optionB").value.trim();
+    const optionC = document.getElementById("optionC").value.trim();
+    const optionD = document.getElementById("optionD").value.trim();
+    const correctOption = document.getElementById("correctOption").value;
+    const marks = parseInt(document.getElementById("marks").value) || 1;
+    const timeLimit = parseInt(document.getElementById("timeLimit").value) || 30;
+
+    if (!questionText || !optionA || !optionB || !optionC || !optionD || !correctOption) {
+        alert("⚠️ Please fill in all fields and select a correct answer!");
+        return;
+    }
+
+    const question = {
+        question: questionText,
+        options: { A: optionA, B: optionB, C: optionC, D: optionD },
+        correctOption: correctOption,
+        marks: marks,
+        timeLimit: timeLimit
+    };
+
+    quizQuestions.push(question);
+
+    // Clear form
+    document.getElementById("questionText").value = "";
+    document.getElementById("optionA").value = "";
+    document.getElementById("optionB").value = "";
+    document.getElementById("optionC").value = "";
+    document.getElementById("optionD").value = "";
+    document.getElementById("correctOption").value = "";
+    document.getElementById("marks").value = "1";
+    document.getElementById("timeLimit").value = "30";
+
+    updateQuestionsList();
+    alert("✅ Question added successfully!");
+}
+
+async function generateAIQuiz() {
+    const topic = document.getElementById('aiTopic').value.trim();
+    const count = parseInt(document.getElementById('aiCount').value);
+    const difficulty = document.getElementById('aiDifficulty').value;
+    const btn = document.getElementById('btnGenerateAI');
+
+    if (!topic) {
+        alert('⚠️ Please enter a topic!');
+        return;
+    }
+
+    // Show loading state
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<span class="loading-spinner"></span> Generating...';
+    btn.disabled = true;
+
+    try {
+        const response = await fetch('/api/generate-quiz', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ topic, count, difficulty })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            quizQuestions = [...quizQuestions, ...data];
+            updateQuestionsList();
+            alert(`✅ Successfully generated ${data.length} questions!`);
+            setMode('manual'); // Switch to manual mode to review
+        } else {
+            alert('❌ Error: ' + (data.error || 'Failed to generate questions'));
+        }
+    } catch (err) {
+        console.error('AI Generation Error:', err);
+        alert('❌ Failed to connect to server');
+    } finally {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    }
+}
+
+async function uploadDocument() {
+    const fileInput = document.getElementById('docUpload');
+    const file = fileInput.files[0];
+    const btn = document.getElementById('btnUploadDoc');
+
+    if (!file) {
+        alert('⚠️ Please select a file to upload!');
+        return;
+    }
+
+    // Show loading state
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<span class="loading-spinner"></span> Processing...';
+    btn.disabled = true;
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+        const response = await fetch('/api/upload-quiz-doc', {
+            method: 'POST',
+            body: formData
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            quizQuestions = [...quizQuestions, ...data];
+            updateQuestionsList();
+            alert(`✅ Successfully extracted ${data.length} questions!`);
+            setMode('manual'); // Switch to manual mode to review
+        } else {
+            alert('❌ Error: ' + (data.error || 'Failed to process document'));
+        }
+    } catch (err) {
+        console.error('Upload Error:', err);
+        alert('❌ Failed to connect to server');
+    } finally {
+    }
+}
+
+function updateQuestionsList() {
+    const listDiv = document.getElementById("questionsList");
+    const count = quizQuestions.length;
+    
+    // Calculate total marks
+    const totalMarks = quizQuestions.reduce((sum, q) => sum + (parseInt(q.marks) || 0), 0);
+    
+    // Update main count
+    document.getElementById("questionCount").textContent = `${count} Question${count !== 1 ? 's' : ''}`;
+    
+    // Update footer stats
+    const footerCount = document.getElementById("footerQuestionCount");
+    const footerMarks = document.getElementById("footerTotalMarks");
+    
+    if (footerCount) footerCount.textContent = `${count} Question${count !== 1 ? 's' : ''}`;
+    if (footerMarks) footerMarks.textContent = `${totalMarks} Mark${totalMarks !== 1 ? 's' : ''}`;
+
+    if (count === 0) {
+        listDiv.innerHTML = '<div class="no-questions">No questions added yet. Add your first question above!</div>';
+        return;
+    }
+
+    listDiv.innerHTML = quizQuestions.map((q, index) => `
+        <div class="question-item">
+            <strong>Q${index + 1}: ${q.question}</strong>
+            <small>
+                <strong>Options:</strong> A: ${q.options.A}, B: ${q.options.B}, C: ${q.options.C}, D: ${q.options.D}<br>
+                <strong>Correct:</strong> ${q.correctOption} | 
+                <strong>Marks:</strong> ${q.marks} | 
+                <strong>Time:</strong> ${q.timeLimit}s
+            </small>
+            <button class="btn btn-danger" onclick="removeQuestion(${index})" style="margin-top: 12px;">🗑️ Remove</button>
+        </div>
+    `).join('');
+}
+
+function removeQuestion(index) {
+    if (confirm("Are you sure you want to remove this question?")) {
+        quizQuestions.splice(index, 1);
+        updateQuestionsList();
+    }
+}
+
+// Initialize Flatpickr
+flatpickr("#scheduleDate", {
+    dateFormat: "Y-m-d",
+    minDate: "today",
+    theme: "dark"
+});
+
+flatpickr("#scheduleStartTime", {
+    enableTime: true,
+    noCalendar: true,
+    dateFormat: "H:i",
+    time_24hr: true,
+    theme: "dark"
+});
+
+flatpickr("#scheduleEndTime", {
+    enableTime: true,
+    noCalendar: true,
+    dateFormat: "H:i",
+    time_24hr: true,
+    theme: "dark"
+});
+
+function sendQuiz() {
+    const title = document.getElementById("quizTitle").value.trim();
+    
+    if (!title) {
+        alert("⚠️ Please enter a quiz title!");
+        return;
+    }
+
+    if (quizQuestions.length === 0) {
+        alert("⚠️ Please add at least one question!");
+        return;
+    }
+
+    const totalQuizTime = selectedTimerMode === 'whole_quiz' 
+        ? parseInt(document.getElementById("totalQuizTime").value) || 30
+        : null;
+
+    // Get Date and Time values
+    const dateStr = document.getElementById("scheduleDate").value;
+    const startTimeStr = document.getElementById("scheduleStartTime").value;
+    const endTimeStr = document.getElementById("scheduleEndTime").value;
+
+    let scheduledStartTime = null;
+    let scheduledEndTime = null;
+
+    if (dateStr && startTimeStr) {
+        scheduledStartTime = new Date(`${dateStr}T${startTimeStr}:00`);
+        
+        if (endTimeStr) {
+            scheduledEndTime = new Date(`${dateStr}T${endTimeStr}:00`);
+            
+            if (scheduledEndTime <= scheduledStartTime) {
+                alert("⚠️ End time must be after start time!");
+                return;
+            }
+        }
+    } else if (dateStr || startTimeStr || endTimeStr) {
+        alert("⚠️ Please select both Date and Start Time to schedule a quiz!");
+        return;
+    }
+
+    // Get allowed sections
+    const allowedSections = Array.from(document.querySelectorAll('input[name="allowedSection"]:checked')).map(cb => cb.value);
+
+    const quizData = {
+        title: title,
+        questions: quizQuestions,
+        timerMode: selectedTimerMode,
+        totalQuizTime: totalQuizTime,
+        scheduledStartTime: scheduledStartTime ? scheduledStartTime.toISOString() : null,
+        scheduledEndTime: scheduledEndTime ? scheduledEndTime.toISOString() : null,
+        allowedSections: allowedSections,
+        createdAt: new Date()
+    };
+
+    console.log("📤 Sending quiz:", quizData);
+    socket.emit("teacher_create_quiz", quizData);
+    
+    // Show loading state
+    const btn = document.querySelector('.btn-success');
+    btn.innerHTML = '⏳ Creating Quiz...';
+    btn.disabled = true;
+}
+
+// Listen for success and redirect
+socket.on('quiz_created_success', (data) => {
+    console.log("✅ Quiz created successfully, redirecting...");
+    
+    // Show launch overlay
+    const overlay = document.getElementById('launchOverlay');
+    if (overlay) {
+        overlay.classList.add('active');
+        
+        // Wait for animation then redirect
+        setTimeout(() => {
+            window.location.href = `monitor_quiz.html?quizId=${data.quizId}`;
+        }, 2500);
+    } else {
+        window.location.href = `monitor_quiz.html?quizId=${data.quizId}`;
+    }
+});
+
+// Listen for failure
+socket.on('quiz_creation_failed', (data) => {
+    console.error("❌ Quiz creation failed:", data.message);
+    alert("❌ Error: " + data.message);
+    
+    // Reset button
+    const btn = document.querySelector('.btn-success');
+    btn.innerHTML = '🚀 Send Quiz to Students';
+    btn.disabled = false;
+});
+
+updateQuestionsList();
+</script>
+
+<!-- Launch Overlay -->
+<div id="launchOverlay" class="launch-overlay">
+    <div class="rocket-container">
+        <div class="rocket">🚀</div>
+    </div>
+    <div class="launch-text">Launching Quiz...</div>
+    <p style="color: #94A3B8; margin-top: 10px;">Notifying students...</p>
+</div>
+
+</body>
+</html>
