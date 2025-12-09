@@ -408,7 +408,7 @@ async function fetchConsoleLogs() {
     container.innerHTML = `<div style="color: #64748b;">> Fetching logs...</div><span class="console-cursor"></span>`;
     
     try {
-        const res = await fetch("/api/malpractice/logs");
+        const res = await fetch(`${CONFIG.API_BASE_URL}/api/malpractice/logs`);
         const logs = await res.json();
         
         renderLogs(logs);
@@ -458,7 +458,7 @@ async function fetchLogs() {
     
     try {
         const token = localStorage.getItem("quizToken");
-        const res = await fetch("/api/system-logs", {
+        const res = await fetch(`${CONFIG.API_BASE_URL}/api/system-logs`, {
              headers: { "Authorization": "Bearer " + token }
         });
         const logs = await res.json();
@@ -496,7 +496,7 @@ async function validate(){
   }
 
   try{
-    const res = await fetch("/dashboard",{ 
+    const res = await fetch(`${CONFIG.API_BASE_URL}/dashboard`,{ 
         headers:{ "Authorization":"Bearer "+token } 
     });
 
