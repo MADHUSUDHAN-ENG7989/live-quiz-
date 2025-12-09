@@ -133,7 +133,7 @@
 </div>
 
 <script>
-const socket = io();
+const socket = io(CONFIG.SOCKET_URL);
 const userid = localStorage.getItem("quizUser");
 let currentQuizData = null;
 let currentQuestionIndex = 0;
