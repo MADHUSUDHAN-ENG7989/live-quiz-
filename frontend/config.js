@@ -5,9 +5,9 @@ const CONFIG = {
     // Server Configuration
     // Server Configuration
     // UPDATE THESE URLS AFTER DEPLOYMENT
-    SOCKET_URL: "https://live-quiz-backend-slpu.onrender.com",
-    API_BASE_URL: "https://live-quiz-backend-slpu.onrender.com",
-    GRAFANA_URL: "https://live-quiz-backend-slpu.onrender.com/grafana", // Assuming grafana is effectively disabled or proxy, but keeping valid URL format
+    SOCKET_URL: "http://localhost:3000",
+    API_BASE_URL: "http://localhost:3000",
+    GRAFANA_URL: "http://localhost:3000/grafana", // Assuming grafana is effectively disabled or proxy, but keeping valid URL format
     
     // Professional Dark Theme Colors
     THEME: {

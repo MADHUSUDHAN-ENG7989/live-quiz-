@@ -799,6 +799,125 @@ const io = new Server(server, {
 // Track active students: userId -> Set(socketIds)
 const activeStudents = new Map();
 
+// --- QUESTION ARENA SOCKET LOGIC ---
+io.on('connection', (socket) => {
+    // console.log(`🔌 New client connected: ${socket.id}`);
+
+    // Join Arena Room
+    socket.on('join_arena', async ({ userid, role }) => {
+        socket.join('arena_room');
+        
+        if (role === 'student') {
+            await redisClient.sAdd('arena:participants', userid);
+        }
+
+        // Send current scores & leaderboard
+        try {
+            const teacherScore = await redisClient.get('arena:score:teacher') || 0;
+            let studentScore = 0;
+            if (role === 'student') {
+                studentScore = await redisClient.hGet('arena:score:students', userid) || 0;
+            }
+            
+            socket.emit('score_update', { 
+                teacherScore: parseInt(teacherScore), 
+                studentScore: parseInt(studentScore) 
+            });
+
+            // Send full leaderboard to everyone who joins
+            broadcastLeaderboard();
+
+        } catch (err) {
+            console.error("Redis Error on Join:", err);
+        }
+    });
+
+    // Teacher Posts a Question
+    socket.on('arena_post_question', (questionData) => {
+        // questionData: { question, options, correctOption, timeLimit }
+        console.log(`📢 Broadcasting question with ${questionData.timeLimit}s limit`);
+        io.to('arena_room').emit('arena_new_question', questionData);
+    });
+
+    // Student Submits Answer
+    socket.on('arena_submit_answer', async ({ userid, answer, correctOption }) => {
+        try {
+            const isCorrect = answer === correctOption;
+            let currentStudentScore = 0;
+            let currentTeacherScore = 0;
+
+            if (isCorrect) {
+                 currentStudentScore = await redisClient.hIncrBy('arena:score:students', userid, 1);
+                 // Teacher score stays same
+                 currentTeacherScore = await redisClient.get('arena:score:teacher') || 0;
+            } else {
+                 currentTeacherScore = await redisClient.incr('arena:score:teacher');
+                 currentStudentScore = await redisClient.hGet('arena:score:students', userid) || 0;
+            }
+
+            // Tell the student the result
+            socket.emit('arena_answer_result', {
+                correct: isCorrect,
+                correctOption: correctOption, 
+                newScore: parseInt(currentStudentScore),
+                teacherScore: parseInt(currentTeacherScore)
+            });
+
+            // Broadcast Global Score Update (Mainly Teacher Score)
+            io.to('arena_room').emit('arena_global_score_update', {
+                teacherScore: parseInt(currentTeacherScore)
+            });
+
+            // Broadcast Leaderboard Update
+            broadcastLeaderboard();
+
+        } catch (err) {
+            console.error("Error processing arena answer:", err);
+        }
+    });
+
+    // Reset Scores
+    socket.on('arena_reset_scores', async () => {
+        try {
+            await redisClient.del('arena:score:teacher');
+            await redisClient.del('arena:score:students');
+            await redisClient.del('arena:participants'); // Optional: clear participants? No, keep them.
+            // Actually, if we reset scores, we should probably keep participants but reset their scores to 0.
+            // For simplicity, we just delete the hash. 
+            
+            io.to('arena_room').emit('score_update', { teacherScore: 0, studentScore: 0 });
+            broadcastLeaderboard(); 
+        } catch (err) {
+            console.error("Error resetting scores:", err);
+        }
+    });
+
+    socket.on('disconnect', () => {
+        // ... (Existing disconnect logic)
+    });
+});
+
+async function broadcastLeaderboard() {
+    try {
+        // specific redis call to get all fields
+        const allScores = await redisClient.hGetAll('arena:score:students');
+        // Convert to array
+        const leaderboard = Object.entries(allScores).map(([userid, score]) => ({
+            userid,
+            score: parseInt(score)
+        }));
+        
+        // Sort descending
+        leaderboard.sort((a,b) => b.score - a.score);
+
+        io.to('arena_room').emit('arena_leaderboard_update', leaderboard);
+    } catch (err) {
+        console.error("Error broadcasting leaderboard:", err);
+    }
+}
+
+
+
 function getActiveStudentCount() {
     return activeStudents.size;
 }
