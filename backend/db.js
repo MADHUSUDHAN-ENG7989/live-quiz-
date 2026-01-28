@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 import dotenv from "dotenv";
-import { MongoMemoryServer } from 'mongodb-memory-server';
+// import { MongoMemoryServer } from 'mongodb-memory-server';
 
 // Load environment variables
 dotenv.config();
@@ -25,6 +25,9 @@ const connectDB = async () => {
     console.log("🔄 Attempting to start In-Memory MongoDB...");
 
     try {
+      // Dynamic import to prevent crash on production if package is missing
+      const { MongoMemoryServer } = await import('mongodb-memory-server');
+
       mongod = await MongoMemoryServer.create();
       const uri = mongod.getUri();
       console.log(`Checking Mongo Memory Server URI: ${uri}`);
