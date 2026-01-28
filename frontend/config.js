@@ -3,18 +3,21 @@
 
 const CONFIG = {
     // Server Configuration
-    // Server Configuration
-    // Automatically detect environment - use current origin for deployed version
-    // Use localhost for local development (when served from file:// or localhost)
+    // Backend URL - change this to your actual Render backend URL
+    BACKEND_URL: "https://live-quiz-backend-slpu.onrender.com",
+
+    // Automatically detect environment
+    // - localhost/file:// → use local backend (localhost:5000)
+    // - deployed → use configured BACKEND_URL
     SOCKET_URL: window.location.hostname === 'localhost' || window.location.protocol === 'file:'
         ? "http://localhost:5000"
-        : window.location.origin,
+        : "https://live-quiz-backend-slpu.onrender.com",
     API_BASE_URL: window.location.hostname === 'localhost' || window.location.protocol === 'file:'
         ? "http://localhost:5000"
-        : window.location.origin,
+        : "https://live-quiz-backend-slpu.onrender.com",
     GRAFANA_URL: window.location.hostname === 'localhost' || window.location.protocol === 'file:'
         ? "http://localhost:5000/grafana"
-        : `${window.location.origin}/grafana`,
+        : "https://live-quiz-backend-slpu.onrender.com/grafana",
 
     // Professional Dark Theme Colors
     THEME: {
