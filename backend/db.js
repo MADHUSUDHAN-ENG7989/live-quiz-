@@ -1,27 +1,40 @@
 import mongoose from "mongoose";
 import dotenv from "dotenv";
+import { MongoMemoryServer } from 'mongodb-memory-server';
 
 // Load environment variables
 dotenv.config();
 
+let mongod = null;
+
 const connectDB = async () => {
   try {
     // Get MongoDB URI from environment variable, fallback to local MongoDB
-    const mongoURI = process.env.MONGO_URI || "mongodb://localhost:27017/quizapp";
-    if (!mongoURI) {
-      throw new Error("MONGO_URI is not defined in .env file");
-    }
+    let mongoURI = process.env.MONGO_URI || "mongodb://localhost:27017/quizapp";
 
+    // Attempt to connect to the provided URI first
+    console.log(`Connecting to MongoDB at ${mongoURI}...`);
     await mongoose.connect(mongoURI, {
-      // Optional: Add these options for better connection handling
-      // useNewUrlParser: true,      // These are now default in Mongoose 6+
-      // useUnifiedTopology: true,   // These are now default in Mongoose 6+
+      serverSelectionTimeoutMS: 5000,
+      connectTimeoutMS: 5000,
     });
 
     console.log("✅ MongoDB Connected");
   } catch (err) {
-    console.error("❌ DB Connection Error:", err.message);
-    process.exit(1); // Exit process with failure
+    console.warn("⚠️ standard DB Connection failed:", err.message);
+    console.log("🔄 Attempting to start In-Memory MongoDB...");
+
+    try {
+      mongod = await MongoMemoryServer.create();
+      const uri = mongod.getUri();
+      console.log(`Checking Mongo Memory Server URI: ${uri}`);
+
+      await mongoose.connect(uri);
+      console.log("✅ Connected to In-Memory MongoDB");
+    } catch (memErr) {
+      console.error("❌ Fatal: Could not connect to any MongoDB source", memErr);
+      process.exit(1);
+    }
   }
 };
 
@@ -36,6 +49,15 @@ mongoose.connection.on("error", (err) => {
 
 mongoose.connection.on("disconnected", () => {
   console.log("⚠️ Mongoose disconnected from MongoDB");
+});
+
+// Clean up on exit
+process.on('SIGINT', async () => {
+  if (mongod) {
+    await mongoose.disconnect();
+    await mongod.stop();
+  }
+  process.exit(0);
 });
 
 export default connectDB;

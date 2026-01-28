@@ -19,6 +19,7 @@
     "express-prom-bundle": "^8.0.0",
     "groq-sdk": "^0.37.0",
     "jsonwebtoken": "^9.0.2",
+    "mongodb-memory-server": "^11.0.1",
     "mongoose": "^8.20.1",
     "multer": "^2.0.2",
     "pdf-parse": "^1.1.1",
