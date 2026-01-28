@@ -4,13 +4,17 @@
 const CONFIG = {
     // Server Configuration
     // Server Configuration
-    // UPDATE THESE URLS AFTER DEPLOYMENT
-    // SOCKET_URL: "https://live-quiz-backend-slpu.onrender.com",
-    // API_BASE_URL: "https://live-quiz-backend-slpu.onrender.com",
-    // GRAFANA_URL: "https://live-quiz-backend-slpu.onrender.com/grafana",
-    SOCKET_URL: "http://localhost:5000",
-    API_BASE_URL: "http://localhost:5000",
-    GRAFANA_URL: "http://localhost:5000/grafana",
+    // Automatically detect environment - use current origin for deployed version
+    // Use localhost for local development (when served from file:// or localhost)
+    SOCKET_URL: window.location.hostname === 'localhost' || window.location.protocol === 'file:'
+        ? "http://localhost:5000"
+        : window.location.origin,
+    API_BASE_URL: window.location.hostname === 'localhost' || window.location.protocol === 'file:'
+        ? "http://localhost:5000"
+        : window.location.origin,
+    GRAFANA_URL: window.location.hostname === 'localhost' || window.location.protocol === 'file:'
+        ? "http://localhost:5000/grafana"
+        : `${window.location.origin}/grafana`,
 
     // Professional Dark Theme Colors
     THEME: {
