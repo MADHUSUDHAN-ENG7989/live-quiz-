@@ -35,7 +35,14 @@ const connectDB = async () => {
       await mongoose.connect(uri);
       console.log("✅ Connected to In-Memory MongoDB");
     } catch (memErr) {
-      console.error("❌ Fatal: Could not connect to any MongoDB source", memErr);
+      if (memErr.code === 'ERR_MODULE_NOT_FOUND') {
+        console.error("❌ PRODUCTION ERROR: Cannot connect to MongoDB Atlas.");
+        console.error("❌ Please check your MONGO_URI credentials in Render environment variables.");
+        console.error("❌ The mongodb-memory-server fallback is not available in production (by design).");
+        console.error(`❌ Original error: ${err.message}`);
+      } else {
+        console.error("❌ Fatal: Could not connect to any MongoDB source", memErr);
+      }
       process.exit(1);
     }
   }
