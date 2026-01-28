@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <title>Attend Quiz</title>
@@ -9,7 +10,12 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
             font-family: "Inter", sans-serif;
             background: #0F172A;
@@ -17,16 +23,35 @@
             padding: 20px;
             color: #F1F5F9;
         }
-        .container { max-width: 900px; margin: 0 auto; }
-        .header { text-align: center; margin-bottom: 30px; }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
         .quiz-box {
             background: #1E293B;
             padding: 40px;
             border-radius: 20px;
             border: 1px solid #334155;
         }
-        .question-text { font-size: 24px; font-weight: 600; margin-bottom: 30px; }
-        .options-container { display: grid; gap: 16px; }
+
+        .question-text {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 30px;
+        }
+
+        .options-container {
+            display: grid;
+            gap: 16px;
+        }
+
         .option-button {
             padding: 20px;
             background: #334155;
@@ -40,18 +65,27 @@
             align-items: center;
             gap: 15px;
         }
-        .option-button:hover { background: #475569; }
+
+        .option-button:hover {
+            background: #475569;
+        }
+
         .option-button.selected {
             background: rgba(99, 102, 241, 0.2);
             border-color: #6366F1;
         }
+
         .option-label {
-            width: 32px; height: 32px;
-            background: rgba(255,255,255,0.1);
+            width: 32px;
+            height: 32px;
+            background: rgba(255, 255, 255, 0.1);
             border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             font-weight: bold;
         }
+
         .nav-controls {
             display: flex;
             justify-content: space-between;
@@ -59,6 +93,7 @@
             padding-top: 20px;
             border-top: 1px solid #334155;
         }
+
         .btn {
             padding: 12px 24px;
             border-radius: 8px;
@@ -69,10 +104,24 @@
             text-decoration: none;
             display: inline-block;
         }
-        .btn-secondary { background: #475569; }
-        .btn-primary { background: #6366F1; }
-        .btn-finish { background: #10B981; }
-        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .btn-secondary {
+            background: #475569;
+        }
+
+        .btn-primary {
+            background: #6366F1;
+        }
+
+        .btn-finish {
+            background: #10B981;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
         .status-bar {
             display: flex;
             justify-content: space-between;
@@ -80,7 +129,7 @@
             font-size: 14px;
             color: #94A3B8;
         }
-        
+
         /* Timer Styles */
         .timer {
             position: fixed;
@@ -93,6 +142,7 @@
             box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
             z-index: 1000;
         }
+
         .timer-display {
             font-size: 48px;
             font-weight: bold;
@@ -100,283 +150,312 @@
             margin-bottom: 8px;
             transition: all 0.3s ease;
         }
-        .timer-display.green { color: #10B981; }
-        .timer-display.yellow { color: #F59E0B; }
-        .timer-display.red { 
-            color: #EF4444; 
+
+        .timer-display.green {
+            color: #10B981;
+        }
+
+        .timer-display.yellow {
+            color: #F59E0B;
+        }
+
+        .timer-display.red {
+            color: #EF4444;
             animation: pulse 1s infinite;
         }
+
         .timer-label {
             text-align: center;
             color: #94A3B8;
             font-size: 14px;
         }
-        
+
         @keyframes pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.1); }
+
+            0%,
+            100% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.1);
+            }
         }
+
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(-20px); }
-            to { opacity: 1; transform: translateY(0); }
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
     </style>
 </head>
+
 <body>
 
-<div id="quizContainer" class="container">
-    <div class="quiz-box" style="text-align: center; padding: 60px;">
-        <div class="loading-spinner"></div>
-        <h2>Loading Quiz...</h2>
-        <p style="color: #94A3B8; margin-top: 10px;">Please wait while we connect to the server</p>
+    <div id="quizContainer" class="container">
+        <div class="quiz-box" style="text-align: center; padding: 60px;">
+            <div class="loading-spinner"></div>
+            <h2>Loading Quiz...</h2>
+            <p style="color: #94A3B8; margin-top: 10px;">Please wait while we connect to the server</p>
+        </div>
     </div>
-</div>
 
-<script>
-const socket = io(CONFIG.SOCKET_URL);
-const userid = localStorage.getItem("quizUser");
-let currentQuizData = null;
-let currentQuestionIndex = 0;
-let userAnswers = {};
-let questionStartTime = null;
-let quizStartTime = null;
-let timerInterval = null;
+    <script>
+        const socket = io(CONFIG.SOCKET_URL);
+        const userid = localStorage.getItem("quizUser");
+        let currentQuizData = null;
+        let currentQuestionIndex = 0;
+        let userAnswers = {};
+        let questionStartTime = null;
+        let quizStartTime = null;
+        let timerInterval = null;
 
-// Get quizId from URL
-const urlParams = new URLSearchParams(window.location.search);
-const quizId = urlParams.get('quizId');
+        // Get quizId from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const quizId = urlParams.get('quizId');
 
-if (!userid) {
-    alert("Please login first!");
-    window.location.href = "index.html";
-}
+        if (!userid) {
+            alert("Please login first!");
+            window.location.href = "index.html";
+        }
 
-// ==========================================
-// 🔒 SESSION & SECURITY LOGIC
-// ==========================================
+        // ==========================================
+        // 🔒 SESSION & SECURITY LOGIC
+        // ==========================================
 
-function checkSession() {
-    // 1. Check if quiz is already completed
-    if (localStorage.getItem(`quiz_completed_${quizId}_${userid}`)) {
-        alert("You have already completed this quiz!");
-        window.location.replace("student_dashboard.html");
-        return false;
-    }
+        function checkSession() {
+            // 1. Check if quiz is already completed
+            if (localStorage.getItem(`quiz_completed_${quizId}_${userid}`)) {
+                alert("You have already completed this quiz!");
+                window.location.replace("student_dashboard.html");
+                return false;
+            }
 
-    // 2. Set active session flag
-    sessionStorage.setItem(`quiz_session_${quizId}`, 'active');
+            // 2. Set active session flag
+            sessionStorage.setItem(`quiz_session_${quizId}`, 'active');
 
-    // 3. Prevent Back Button
-    history.pushState(null, null, location.href);
-    window.onpopstate = function () {
-        history.go(1);
-        alert("⚠️ You cannot go back during the quiz. Please finish the quiz to exit.");
-    };
+            // 3. Prevent Back Button
+            history.pushState(null, null, location.href);
+            window.onpopstate = function () {
+                history.go(1);
+                alert("⚠️ You cannot go back during the quiz. Please finish the quiz to exit.");
+            };
 
-    // 4. Warn on page reload/close
-    window.onbeforeunload = function() {
-        return "Are you sure you want to leave? Your progress may be lost.";
-    };
-    
-    return true;
-}
+            // 4. Warn on page reload/close
+            window.onbeforeunload = function () {
+                return "Are you sure you want to leave? Your progress may be lost.";
+            };
 
-// Initialize Session
-if (!checkSession()) {
-    throw new Error("Session invalid");
-}
+            return true;
+        }
 
-// ==========================================
-// 🚨 MALPRACTICE DETECTION
-// ==========================================
+        // Initialize Session
+        if (!checkSession()) {
+            throw new Error("Session invalid");
+        }
 
-function reportMalpractice(type) {
-    console.warn(`Behavior Detected: ${type}`);
-    
-    // Show Warning to Student
-    const warningDiv = document.createElement("div");
-    warningDiv.style.position = "fixed";
-    warningDiv.style.top = "20px";
-    warningDiv.style.left = "50%";
-    warningDiv.style.transform = "translateX(-50%)";
-    warningDiv.style.background = "#EF4444";
-    warningDiv.style.color = "white";
-    warningDiv.style.padding = "12px 24px";
-    warningDiv.style.borderRadius = "8px";
-    warningDiv.style.boxShadow = "0 10px 30px rgba(239, 68, 68, 0.4)";
-    warningDiv.style.zIndex = "3000";
-    warningDiv.style.fontWeight = "bold";
-    warningDiv.style.animation = "fadeIn 0.3s ease-out";
-    warningDiv.innerHTML = `⚠️ Warning: ${type} Detected! This has been recorded.`;
-    
-    document.body.appendChild(warningDiv);
-    
-    setTimeout(() => {
-        warningDiv.remove();
-    }, 4000);
+        // ==========================================
+        // 🚨 MALPRACTICE DETECTION
+        // ==========================================
 
-    // Send to Server
-    socket.emit("malpractice_alert", {
-        userid: userid,
-        quizId: quizId,
-        type: type,
-        timestamp: Date.now()
-    });
-}
+        function reportMalpractice(type) {
+            console.warn(`Behavior Detected: ${type}`);
 
-// 1. Tab Switching / Minimizing
-function handleVisibilityChange() {
-    if (document.hidden) {
-        reportMalpractice("Tab Switch / Minimize");
-    }
-}
-document.addEventListener("visibilitychange", handleVisibilityChange);
+            // Show Warning to Student
+            const warningDiv = document.createElement("div");
+            warningDiv.style.position = "fixed";
+            warningDiv.style.top = "20px";
+            warningDiv.style.left = "50%";
+            warningDiv.style.transform = "translateX(-50%)";
+            warningDiv.style.background = "#EF4444";
+            warningDiv.style.color = "white";
+            warningDiv.style.padding = "12px 24px";
+            warningDiv.style.borderRadius = "8px";
+            warningDiv.style.boxShadow = "0 10px 30px rgba(239, 68, 68, 0.4)";
+            warningDiv.style.zIndex = "3000";
+            warningDiv.style.fontWeight = "bold";
+            warningDiv.style.animation = "fadeIn 0.3s ease-out";
+            warningDiv.innerHTML = `⚠️ Warning: ${type} Detected! This has been recorded.`;
 
-// 2. Window Blur (Clicking outside)
-function handleWindowBlur() {
-    reportMalpractice("Window Focus Lost");
-}
-window.addEventListener("blur", handleWindowBlur);
+            document.body.appendChild(warningDiv);
 
-function stopMalpracticeDetection() {
-    document.removeEventListener("visibilitychange", handleVisibilityChange);
-    window.removeEventListener("blur", handleWindowBlur);
-}
+            setTimeout(() => {
+                warningDiv.remove();
+            }, 4000);
 
-socket.on('connect', () => {
-    console.log('Connected to server');
-    socket.emit("student_join", { userid });
-});
+            // Send to Server
+            socket.emit("malpractice_alert", {
+                userid: userid,
+                quizId: quizId,
+                type: type,
+                timestamp: Date.now()
+            });
+        }
 
-socket.on("send_quiz_to_students", (quizData) => {
-    // Verify this is the correct quiz
-    if (quizId && quizData.id !== quizId && quizData._id !== quizId) {
-        console.log("Ignoring quiz data for different quiz");
-        return;
-    }
+        // 1. Tab Switching / Minimizing
+        function handleVisibilityChange() {
+            if (document.hidden) {
+                reportMalpractice("Tab Switch / Minimize");
+            }
+        }
+        document.addEventListener("visibilitychange", handleVisibilityChange);
 
-    console.log("Quiz received:", quizData.title);
-    currentQuizData = quizData;
-    quizStartTime = Date.now();
-    renderQuestion(0);
-});
+        // 2. Window Blur (Clicking outside)
+        function handleWindowBlur() {
+            reportMalpractice("Window Focus Lost");
+        }
+        window.addEventListener("blur", handleWindowBlur);
 
-socket.on("answer_received", (data) => {
-    console.log("Answer saved:", data);
-});
+        function stopMalpracticeDetection() {
+            document.removeEventListener("visibilitychange", handleVisibilityChange);
+            window.removeEventListener("blur", handleWindowBlur);
+        }
 
-socket.on("no_active_quiz", () => {
-    const box = document.querySelector('.quiz-box');
-    box.innerHTML = `
+        socket.on('connect', () => {
+            console.log('Connected to server');
+            socket.emit("student_join", { userid });
+        });
+
+        socket.on("send_quiz_to_students", (quizData) => {
+            // Verify this is the correct quiz
+            if (quizId && quizData.id !== quizId && quizData._id !== quizId) {
+                console.log("Ignoring quiz data for different quiz");
+                return;
+            }
+
+            console.log("Quiz received:", quizData.title);
+            currentQuizData = quizData;
+            quizStartTime = Date.now();
+            renderQuestion(0);
+        });
+
+        socket.on("answer_received", (data) => {
+            console.log("Answer saved:", data);
+        });
+
+        socket.on("no_active_quiz", () => {
+            const box = document.querySelector('.quiz-box');
+            box.innerHTML = `
         <div style="font-size: 48px; margin-bottom: 20px;">⏳</div>
         <h2>No Active Quiz</h2>
         <p style="color: #94A3B8; margin-top: 10px;">Waiting for the teacher to start the quiz...</p>
         <button onclick="location.href='student_dashboard.html'" class="btn btn-secondary" style="margin-top: 20px;">Back to Dashboard</button>
     `;
-});
+        });
 
-socket.on("answer_result", (data) => {
-    console.log("Validation Result (Hidden from user):", data);
-    // Visual feedback disabled as per user request
-    /*
-    const { questionIndex, isCorrect, message } = data;
-    
-    // Show visual feedback
-    const options = document.querySelectorAll('.option-button');
-    const selectedOption = document.querySelector('.option-button.selected');
-    
-    if (selectedOption) {
-        if (isCorrect) {
-            selectedOption.style.backgroundColor = 'rgba(16, 185, 129, 0.2)'; // Green
-            selectedOption.style.borderColor = '#10B981';
-        } else {
-            selectedOption.style.backgroundColor = 'rgba(239, 68, 68, 0.2)'; // Red
-            selectedOption.style.borderColor = '#EF4444';
-        }
-        
-        // Show toast or message
-        const statusDiv = document.createElement('div');
-        statusDiv.style.position = 'fixed';
-        statusDiv.style.top = '100px';
-        statusDiv.style.left = '50%';
-        statusDiv.style.transform = 'translateX(-50%)';
-        statusDiv.style.padding = '12px 24px';
-        statusDiv.style.borderRadius = '8px';
-        statusDiv.style.backgroundColor = isCorrect ? '#10B981' : '#EF4444';
-        statusDiv.style.color = 'white';
-        statusDiv.style.fontWeight = 'bold';
-        statusDiv.style.zIndex = '2000';
-        statusDiv.style.animation = 'fadeIn 0.3s ease-out';
-        statusDiv.innerText = message;
-        
-        document.body.appendChild(statusDiv);
-        
-        setTimeout(() => {
-            statusDiv.remove();
-        }, 2000);
-    }
-    */
-});
+        socket.on("answer_result", (data) => {
+            console.log("Validation Result (Hidden from user):", data);
+            // Visual feedback disabled as per user request
+            /*
+            const { questionIndex, isCorrect, message } = data;
+            
+            // Show visual feedback
+            const options = document.querySelectorAll('.option-button');
+            const selectedOption = document.querySelector('.option-button.selected');
+            
+            if (selectedOption) {
+                if (isCorrect) {
+                    selectedOption.style.backgroundColor = 'rgba(16, 185, 129, 0.2)'; // Green
+                    selectedOption.style.borderColor = '#10B981';
+                } else {
+                    selectedOption.style.backgroundColor = 'rgba(239, 68, 68, 0.2)'; // Red
+                    selectedOption.style.borderColor = '#EF4444';
+                }
+                
+                // Show toast or message
+                const statusDiv = document.createElement('div');
+                statusDiv.style.position = 'fixed';
+                statusDiv.style.top = '100px';
+                statusDiv.style.left = '50%';
+                statusDiv.style.transform = 'translateX(-50%)';
+                statusDiv.style.padding = '12px 24px';
+                statusDiv.style.borderRadius = '8px';
+                statusDiv.style.backgroundColor = isCorrect ? '#10B981' : '#EF4444';
+                statusDiv.style.color = 'white';
+                statusDiv.style.fontWeight = 'bold';
+                statusDiv.style.zIndex = '2000';
+                statusDiv.style.animation = 'fadeIn 0.3s ease-out';
+                statusDiv.innerText = message;
+                
+                document.body.appendChild(statusDiv);
+                
+                setTimeout(() => {
+                    statusDiv.remove();
+                }, 2000);
+            }
+            */
+        });
 
-socket.on("quiz_completed", (result) => {
-    console.log("Quiz completed! Result:", result);
-    clearInterval(timerInterval);
-    
-    // Mark as completed in local storage
-    localStorage.setItem(`quiz_completed_${quizId}_${userid}`, 'true');
-    sessionStorage.removeItem(`quiz_session_${quizId}`);
-    
-    // Remove navigation locks
-    window.onpopstate = null;
-    window.onbeforeunload = null;
-    
-    showCompletionScreen(result);
-});
+        socket.on("quiz_completed", (result) => {
+            console.log("Quiz completed! Result:", result);
+            clearInterval(timerInterval);
 
-socket.on("error", (data) => {
-    console.error("Socket Error:", data);
-    alert(data.message || "An error occurred. Please try again.");
-    // If stuck on "Calculating...", maybe reload or show button to retry
-    const loadingSpinner = document.querySelector('.loading-spinner');
-    if (loadingSpinner) {
-        document.getElementById("quizContainer").innerHTML = `
+            // Clear the timeout since we got a response
+            if (window.quizResultTimeout) {
+                clearTimeout(window.quizResultTimeout);
+            }
+
+            // Mark as completed in local storage
+            localStorage.setItem(`quiz_completed_${quizId}_${userid}`, 'true');
+            sessionStorage.removeItem(`quiz_session_${quizId}`);
+
+            // Remove navigation locks
+            window.onpopstate = null;
+            window.onbeforeunload = null;
+
+            showCompletionScreen(result);
+        });
+
+        socket.on("error", (data) => {
+            console.error("Socket Error:", data);
+            alert(data.message || "An error occurred. Please try again.");
+            // If stuck on "Calculating...", maybe reload or show button to retry
+            const loadingSpinner = document.querySelector('.loading-spinner');
+            if (loadingSpinner) {
+                document.getElementById("quizContainer").innerHTML = `
             <div class="quiz-box" style="text-align: center; padding: 40px;">
                 <h2 style="color: #EF4444;">Error Calculating Results</h2>
                 <p style="color: #94A3B8; margin: 20px 0;">${data.message || "Server connection failed"}</p>
                 <button class="btn btn-primary" onclick="location.reload()">Retry</button>
             </div>
         `;
-    }
-});
+            }
+        });
 
-function renderQuestion(index) {
-    if (!currentQuizData) return;
-    
-    currentQuestionIndex = index;
-    const questionObj = currentQuizData.questions[index];
-    const totalQuestions = currentQuizData.questions.length;
-    const currentAnswer = userAnswers[index];
-    const timeLimit = questionObj.timeLimit || 30;
-    
-    // ---------------------------------------------------------
-    // TIMER PERSISTENCE FIX
-    // ---------------------------------------------------------
-    const timerKey = `quiz_${quizId}_q_${index}_start`;
-    let storedStartTime = localStorage.getItem(timerKey);
+        function renderQuestion(index) {
+            if (!currentQuizData) return;
 
-    if (!storedStartTime) {
-        // First time visiting this question
-        storedStartTime = Date.now();
-        localStorage.setItem(timerKey, storedStartTime);
-    }
+            currentQuestionIndex = index;
+            const questionObj = currentQuizData.questions[index];
+            const totalQuestions = currentQuizData.questions.length;
+            const currentAnswer = userAnswers[index];
+            const timeLimit = questionObj.timeLimit || 30;
 
-    questionStartTime = parseInt(storedStartTime);
-    const elapsedSeconds = Math.floor((Date.now() - questionStartTime) / 1000);
-    const remainingTime = Math.max(0, timeLimit - elapsedSeconds);
+            // ---------------------------------------------------------
+            // TIMER PERSISTENCE FIX
+            // ---------------------------------------------------------
+            const timerKey = `quiz_${quizId}_q_${index}_start`;
+            let storedStartTime = localStorage.getItem(timerKey);
 
-    startTimer(remainingTime, timeLimit);
+            if (!storedStartTime) {
+                // First time visiting this question
+                storedStartTime = Date.now();
+                localStorage.setItem(timerKey, storedStartTime);
+            }
 
-    document.getElementById("quizContainer").innerHTML = `
+            questionStartTime = parseInt(storedStartTime);
+            const elapsedSeconds = Math.floor((Date.now() - questionStartTime) / 1000);
+            const remainingTime = Math.max(0, timeLimit - elapsedSeconds);
+
+            startTimer(remainingTime, timeLimit);
+
+            document.getElementById("quizContainer").innerHTML = `
         <div class="timer">
             <div class="timer-display green" id="timerDisplay">${remainingTime}</div>
             <div class="timer-label">seconds remaining</div>
@@ -391,7 +470,7 @@ function renderQuestion(index) {
             <div class="question-text">${questionObj.question}</div>
 
             <div class="options-container">
-                ${['A','B','C','D'].map(opt => `
+                ${['A', 'B', 'C', 'D'].map(opt => `
                     <button class="option-button ${currentAnswer === opt ? 'selected' : ''}" 
                             onclick="selectOption('${opt}')">
                         <div class="option-label">${opt}</div>
@@ -419,111 +498,128 @@ function renderQuestion(index) {
             </div>
         </div>
     `;
-}
-
-function startTimer(initialRemaining, totalSeconds) {
-    clearInterval(timerInterval);
-    let remaining = initialRemaining;
-    
-    const display = document.getElementById('timerDisplay');
-    if (display) {
-        display.textContent = remaining;
-        const percentage = (remaining / totalSeconds) * 100;
-        display.className = 'timer-display ' + 
-            (percentage > 50 ? 'green' : percentage > 25 ? 'yellow' : 'red');
-    }
-
-    if (remaining <= 0) {
-        handleTimeExpired();
-        return;
-    }
-
-    timerInterval = setInterval(() => {
-        remaining--;
-        const display = document.getElementById('timerDisplay');
-        if (!display) {
-            clearInterval(timerInterval);
-            return;
         }
-        
-        display.textContent = remaining;
-        
-        // Change color based on time remaining
-        const percentage = (remaining / totalSeconds) * 100;
-        display.className = 'timer-display ' + 
-            (percentage > 50 ? 'green' : percentage > 25 ? 'yellow' : 'red');
-        
-        if (remaining <= 0) {
+
+        function startTimer(initialRemaining, totalSeconds) {
             clearInterval(timerInterval);
-            handleTimeExpired();
+            let remaining = initialRemaining;
+
+            const display = document.getElementById('timerDisplay');
+            if (display) {
+                display.textContent = remaining;
+                const percentage = (remaining / totalSeconds) * 100;
+                display.className = 'timer-display ' +
+                    (percentage > 50 ? 'green' : percentage > 25 ? 'yellow' : 'red');
+            }
+
+            if (remaining <= 0) {
+                handleTimeExpired();
+                return;
+            }
+
+            timerInterval = setInterval(() => {
+                remaining--;
+                const display = document.getElementById('timerDisplay');
+                if (!display) {
+                    clearInterval(timerInterval);
+                    return;
+                }
+
+                display.textContent = remaining;
+
+                // Change color based on time remaining
+                const percentage = (remaining / totalSeconds) * 100;
+                display.className = 'timer-display ' +
+                    (percentage > 50 ? 'green' : percentage > 25 ? 'yellow' : 'red');
+
+                if (remaining <= 0) {
+                    clearInterval(timerInterval);
+                    handleTimeExpired();
+                }
+            }, 1000);
         }
-    }, 1000);
-}
 
-function handleTimeExpired() {
-    const isLastQuestion = currentQuestionIndex === currentQuizData.questions.length - 1;
-    
-    if (isLastQuestion) {
-        // Auto-submit quiz
-        finishQuiz(true);
-    } else {
-        // Auto-advance to next question
-        nextQuestion();
-    }
-}
+        function handleTimeExpired() {
+            const isLastQuestion = currentQuestionIndex === currentQuizData.questions.length - 1;
 
-function selectOption(option) {
-    const timeTaken = Math.floor((Date.now() - questionStartTime) / 1000);
-    userAnswers[currentQuestionIndex] = option;
-    
-    renderQuestion(currentQuestionIndex);
+            if (isLastQuestion) {
+                // Auto-submit quiz
+                finishQuiz(true);
+            } else {
+                // Auto-advance to next question
+                nextQuestion();
+            }
+        }
 
-    // Send to server with time
-    socket.emit("submit_answer", { 
-        userid, 
-        questionIndex: currentQuestionIndex,
-        answer: option,
-        timeTaken: timeTaken
-    });
-}
+        function selectOption(option) {
+            const timeTaken = Math.floor((Date.now() - questionStartTime) / 1000);
+            userAnswers[currentQuestionIndex] = option;
 
-function prevQuestion() {
-    if (currentQuestionIndex > 0) {
-        renderQuestion(currentQuestionIndex - 1);
-    }
-}
+            renderQuestion(currentQuestionIndex);
 
-function nextQuestion() {
-    if (currentQuestionIndex < currentQuizData.questions.length - 1) {
-        renderQuestion(currentQuestionIndex + 1);
-    }
-}
+            // Send to server with time
+            socket.emit("submit_answer", {
+                userid,
+                questionIndex: currentQuestionIndex,
+                answer: option,
+                timeTaken: timeTaken
+            });
+        }
 
-function finishQuiz(autoSubmit = false) {
-    if (!autoSubmit && !confirm("Are you sure you want to finish the quiz? You cannot change answers after this.")) {
-        return;
-    }
-    
-    clearInterval(timerInterval);
-    stopMalpracticeDetection(); // Stop tracking behavior
-    const totalTime = Math.floor((Date.now() - quizStartTime) / 1000);
-    
-    socket.emit("finish_quiz", { userid, totalTime });
-    
-    document.getElementById("quizContainer").innerHTML = `
+        function prevQuestion() {
+            if (currentQuestionIndex > 0) {
+                renderQuestion(currentQuestionIndex - 1);
+            }
+        }
+
+        function nextQuestion() {
+            if (currentQuestionIndex < currentQuizData.questions.length - 1) {
+                renderQuestion(currentQuestionIndex + 1);
+            }
+        }
+
+        function finishQuiz(autoSubmit = false) {
+            if (!autoSubmit && !confirm("Are you sure you want to finish the quiz? You cannot change answers after this.")) {
+                return;
+            }
+
+            clearInterval(timerInterval);
+            stopMalpracticeDetection(); // Stop tracking behavior
+            const totalTime = Math.floor((Date.now() - quizStartTime) / 1000);
+
+            socket.emit("finish_quiz", { userid, totalTime });
+
+            document.getElementById("quizContainer").innerHTML = `
         <div style="text-align: center; padding: 60px;">
             <h2>Calculating your results...</h2>
             <p style="color: #94A3B8; margin-top: 10px;">Please wait</p>
         </div>
     `;
-}
+
+            // Timeout safety: if no response in 30 seconds, show error with retry
+            window.quizResultTimeout = setTimeout(() => {
+                document.getElementById("quizContainer").innerHTML = `
+            <div class="quiz-box" style="text-align: center; padding: 40px;">
+                <div style="font-size: 48px; margin-bottom: 20px;">⚠️</div>
+                <h2 style="color: #F59E0B;">Connection Timeout</h2>
+                <p style="color: #94A3B8; margin: 20px 0;">
+                    The server is taking too long to respond. Your answers have been saved.
+                </p>
+                <div style="display: flex; gap: 16px; justify-content: center; margin-top: 20px;">
+                    <button class="btn btn-primary" onclick="location.reload()">Retry</button>
+                    <a href="student_dashboard.html" class="btn btn-secondary">Back to Dashboard</a>
+                </div>
+            </div>
+        `;
+            }, 30000);
+        }
 
 
 
-function showCompletionScreen(result) {
-    const accuracy = ((result.score / result.totalMarks) * 100).toFixed(1);
-    
-    document.getElementById("quizContainer").innerHTML = `
+        function showCompletionScreen(result) {
+            const accuracy = ((result.score / result.totalMarks) * 100).toFixed(1);
+
+            document.getElementById("quizContainer").innerHTML = `
         <div class="quiz-box" style="text-align: center; animation: fadeIn 0.5s ease-in;">
             <div style="font-size: 60px; margin-bottom: 20px;">🎉</div>
             <h2 style="color: #10B981; margin-bottom: 30px;">Quiz Completed!</h2>
@@ -559,20 +655,21 @@ function showCompletionScreen(result) {
         </div>
     `;
 
-    // Auto-redirect logic
-    let secondsLeft = 5;
-    const redirectInterval = setInterval(() => {
-        secondsLeft--;
-        const timerEl = document.getElementById('redirectTimer');
-        if (timerEl) timerEl.textContent = secondsLeft;
-        
-        if (secondsLeft <= 0) {
-            clearInterval(redirectInterval);
-            window.location.replace("student_dashboard.html");
+            // Auto-redirect logic
+            let secondsLeft = 5;
+            const redirectInterval = setInterval(() => {
+                secondsLeft--;
+                const timerEl = document.getElementById('redirectTimer');
+                if (timerEl) timerEl.textContent = secondsLeft;
+
+                if (secondsLeft <= 0) {
+                    clearInterval(redirectInterval);
+                    window.location.replace("student_dashboard.html");
+                }
+            }, 1000);
         }
-    }, 1000);
-}
-</script>
+    </script>
 
 </body>
+
 </html>
